@@ -1,0 +1,60 @@
+name: unimet_app
+description: App para estudiantes de la Universidad Metropolitana (Unimet).
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Backend
+  supabase_flutter: ^2.5.0
+
+  # Estado (Riverpod — type-safe, inyección de dependencias, testeable)
+  flutter_riverpod: ^2.5.0
+  riverpod_annotation: ^2.3.0
+
+  # Navegación
+  go_router: ^14.2.0
+
+  # Escaneo de carnet
+  mobile_scanner: ^5.1.0
+
+  # UI / UX
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.0
+  flutter_animate: ^4.5.0
+  shimmer: ^3.0.0
+  gap: ^3.0.1
+  cached_network_image: ^3.3.1
+
+  # Utilidades
+  flutter_dotenv: ^5.1.0
+  equatable: ^3.0.0
+  intl: ^0.19.0
+  image_picker: ^1.0.7
+  permission_handler: ^11.3.0
+  connectivity_plus: ^6.0.3
+  camera: ^0.12.0+2
+  google_mlkit_text_recognition: ^0.16.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.8
+  mockito: ^5.4.4
+  riverpod_lint: ^2.3.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+    - .env
+

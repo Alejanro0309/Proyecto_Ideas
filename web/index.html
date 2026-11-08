@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="App para estudiantes de la Universidad Metropolitana (Unimet).">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="unimet_app">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Unimet App - Pantalla Principal</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Tesseract.js v5 para OCR en Web -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    let _tesseractWorker = null;
+    let _workerInitializing = null;
+
+    async function getWorker() {
+      if (_tesseractWorker) return _tesseractWorker;
+      if (_workerInitializing) return _workerInitializing;
+
+      _workerInitializing = (async () => {
+        try {
+          const worker = await Tesseract.createWorker(['spa', 'eng']);
+          _tesseractWorker = worker;
+          return worker;
+        } catch (e) {
+          console.warn("Fallo inicializando worker multilingüe, reintentando solo 'spa':", e);
+          const worker = await Tesseract.createWorker('spa');
+          _tesseractWorker = worker;
+          return worker;
+        } finally {
+          _workerInitializing = null;
+        }
+      })();
+
+      return _workerInitializing;
+    }
+
+    window.recognizeCarnetText = async function(imageSource) {
+      if (typeof Tesseract === 'undefined') {
+        throw new Error("Tesseract.js no está disponible. Revisa tu conexión a internet.");
+      }
+      try {
+        const worker = await getWorker();
+        const ret = await worker.recognize(imageSource);
+        return (ret && ret.data && ret.data.text) ? ret.data.text : "";
+      } catch (err) {
+        console.error("Error reconociendo texto con worker:", err);
+        _tesseractWorker = null;
+        // Fallback directo sin worker reutilizado
+        const res = await Tesseract.recognize(imageSource, 'spa');
+        return (res && res.data && res.data.text) ? res.data.text : "";
+      }
+    };
+  </script>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

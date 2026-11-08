@@ -1,0 +1,14 @@
+# Flutter y Dart
+.dart_tool/
+.flutter-plugins-dependencies
+.packages
+build/
+
+# Editores e IDEs
+.idea/
+*.iml
+.vscode/
+
+# Herramientas auxiliares locales
+.agents/
+.aider-desk/
