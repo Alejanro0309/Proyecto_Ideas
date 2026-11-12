@@ -12,15 +12,14 @@ import 'ocr/ocr_service.dart';
 /// Lee el carnet con OCR (ML Kit en móvil, Tesseract.js en web),
 /// valida códigos y guarda los datos confirmados.
 class ScannerService {
-  final ProfileRepository? _profiles;
-  final SupabaseClient? _client;
-  final OcrService _ocrService;
-
   ScannerService([
     this._profiles,
     this._client,
     OcrService? ocrService,
   ]) : _ocrService = ocrService ?? OcrService.create();
+  final ProfileRepository? _profiles;
+  final SupabaseClient? _client;
+  final OcrService _ocrService;
 
   /// Carnets de prueba preconfigurados para demostración y testing
   static const Map<String, Map<String, dynamic>> testCarnets = {
@@ -56,7 +55,7 @@ class ScannerService {
   };
 
   /// Lee la foto del carnet (con ML Kit en móvil o Tesseract.js en web).
-  /// Solo devuelve datos si es un carnet universitario válido.
+  /// Solo devuelve datos si es un carnet universitario de estudiante.
   Future<CarnetData> readCarnet(String imagePath, {Uint8List? bytes}) async {
     final text = await _ocrService.recognizeText(
       imagePath: imagePath,
@@ -68,7 +67,17 @@ class ScannerService {
       throw CarnetNoUniversitarioException(check.reason!);
     }
 
-    return CarnetParser.parse(text);
+    final data = CarnetParser.parse(text);
+
+    // El rol debe quedar explícito: solo carnets de estudiante.
+    if (data.rol != 'Estudiante') {
+      throw const CarnetNoUniversitarioException(
+        'El documento no indica que seas estudiante. '
+        'Solo se aceptan carnets de estudiante.',
+      );
+    }
+
+    return data;
   }
 
   /// Guarda los datos ya confirmados por el usuario.
@@ -210,9 +219,8 @@ class ScannerService {
 
     return CarnetVerification.success(
       code: cleanCode,
-      studentName: testInfo != null
-          ? testInfo['nombre'] as String
-          : 'Estudiante Unimet',
+      studentName:
+          testInfo != null ? testInfo['nombre'] as String : 'Estudiante Unimet',
       career: testInfo != null
           ? testInfo['carrera'] as String
           : 'Facultad de Ingeniería',

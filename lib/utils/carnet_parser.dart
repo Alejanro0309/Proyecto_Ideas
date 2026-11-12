@@ -11,7 +11,24 @@ class CarnetParser {
 
   static CarnetData parse(String text) {
     final t = text.replaceAll('\r', '');
-    return CarnetData(cedula: _cedula(t), name: _name(t), carnet: _carnet(t));
+    return CarnetData(
+      cedula: _cedula(t),
+      name: _name(t),
+      carnet: _carnet(t),
+      rol: _rol(t),
+    );
+  }
+
+  /// El rol impreso en el carnet. Solo se reconoce `Estudiante`; si el
+  /// documento no lo indica, devuelve null y el validador lo rechaza.
+  static String? _rol(String t) {
+    final m = RegExp(
+      r'\b(ESTUDIANTE|ESTUDIANTIL|ALUMNO|ALUMNA)\b',
+      caseSensitive: false,
+    ).firstMatch(t);
+    if (m == null) return null;
+    final raw = m.group(1)!.toLowerCase();
+    return raw.startsWith('estudiant') ? 'Estudiante' : 'Alumno';
   }
 
   static String? _cedula(String t) {

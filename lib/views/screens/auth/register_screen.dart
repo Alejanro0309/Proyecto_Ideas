@@ -41,7 +41,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     await ref.read(authControllerProvider.notifier).signUp(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
-          fullName: _nameCtrl.text.trim(),
+          nombre: _nameCtrl.text.trim(),
         );
 
     final formState = ref.read(authControllerProvider);
@@ -54,14 +54,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         final profile = await ref.read(studentProfileProvider.future);
         if (!mounted) return;
 
-        // LÓGICA: Si la verificación del carnet está en true -> Pantalla Principal
+        // LÓGICA: Si `verificado` está en true en Supabase -> pantalla principal
+        // y no se vuelve a pedir el carnet.
         if (profile?.isCarnetVerified == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('¡Bienvenido! Carnet verificado exitosamente.'),
             ),
           );
-          context.go(AppRoutes.home);
+          context.go(AppRoutes.panel);
           return;
         } else {
           // Si no está verificado aún, llevar a la verificación de carnet
@@ -253,4 +254,3 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 }
-

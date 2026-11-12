@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'config/theme/app_theme.dart';
+import 'core/theme/app_theme.dart' as rumbo;
 import 'config/router/app_router.dart';
 import 'config/app_constants.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar los nombres de fecha en español ("20 oct", "dic", etc.).
+  // Sin esto, DateFormat('d MMM', 'es') lanza LocaleDataException en cada
+  // tarjeta de reto (pedido en explorar_retos_fullstack.md, sección 4).
+  try {
+    await initializeDateFormatting('es', null);
+  } catch (e) {
+    debugPrint('No se pudieron cargar los datos de fecha en español: $e');
+  }
 
   // Personalizar el widget de error para que en producción (Netlify)
   // nunca se muestre la "pantalla gris" vacía, sino el motivo del fallo.
@@ -90,9 +101,22 @@ class UnimetApp extends StatelessWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light, // Modo claro por defecto para consistencia visual
+      theme: rumbo.buildRumboTheme(),
+      darkTheme: rumbo.buildRumboTheme(),
+      themeMode:
+          ThemeMode.light, // Modo claro por defecto para consistencia visual
+      // Localizaciones en español: sin esto, `showDatePicker(locale: 'es')`
+      // lanza "No MaterialLocalizations found" y rompe la pantalla en web.
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'),
+        Locale('en'),
+      ],
+      locale: const Locale('es'),
       routerConfig: appRouter,
     );
   }

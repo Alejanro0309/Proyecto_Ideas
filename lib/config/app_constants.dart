@@ -12,4 +12,3 @@ class AppConstants {
   static const String noConnection =
       'Sin conexión a internet. Revisa tu red e intenta de nuevo.';
 }
-

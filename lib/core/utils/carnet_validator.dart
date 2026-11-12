@@ -1,20 +1,25 @@
 library;
 
 class CarnetValidation {
+  const CarnetValidation.valid()
+      : isValid = true,
+        reason = null,
+        esEstudiante = true;
+
+  const CarnetValidation.invalid(this.reason, {this.esEstudiante = false})
+      : isValid = false;
+
   final bool isValid;
   final String? reason;
 
-  const CarnetValidation.valid()
-      : isValid = true,
-        reason = null;
-
-  const CarnetValidation.invalid(this.reason) : isValid = false;
+  /// Si el documento se reconoció explícitamente como carnet de estudiante.
+  final bool esEstudiante;
 }
 
 /// Se lanza cuando el documento escaneado no es un carnet universitario.
 class CarnetNoUniversitarioException implements Exception {
-  final String message;
   const CarnetNoUniversitarioException(this.message);
+  final String message;
 
   @override
   String toString() => message;
@@ -40,8 +45,7 @@ class CarnetValidator {
   ];
 
   // Señal de que es de una universidad
-  static final RegExp _university =
-      RegExp(r'UNIVERSIDAD|UNIMET|METROPOLITANA');
+  static final RegExp _university = RegExp(r'UNIVERSIDAD|UNIMET|METROPOLITANA');
 
   // Marcadores propios del carnet (ejemplo: Unimet)
   static final RegExp _roleStudent = RegExp(r'\bESTUDIANTE\b');
@@ -60,6 +64,18 @@ class CarnetValidator {
       t = t.replaceAll(_from[i], _to[i]);
     }
     return t.replaceAll(RegExp(r'[ \t]+'), ' ');
+  }
+
+  /// Extrae el rol del documento leyendo el texto del OCR.
+  ///
+  /// Devuelve `Estudiante` si el carnet lo indica explícitamente; si el
+  /// documento está bloqueado devuelve `null`.
+  static String? rolDelTexto(String ocrText) {
+    final t = _normalize(ocrText);
+    for (final r in _blocked) {
+      if (r.hasMatch(t)) return null;
+    }
+    return _roleStudent.hasMatch(t) ? 'Estudiante' : null;
   }
 
   static CarnetValidation validate(String ocrText) {
@@ -83,7 +99,16 @@ class CarnetValidator {
       );
     }
 
-    // 3. Debe tener suficientes marcadores propios del carnet.
+    // 3. Debe decir ESTUDIANTE: es lo que evita usar otro documento
+    //    de identidad que no sea el carnet.
+    if (!_roleStudent.hasMatch(t)) {
+      return const CarnetValidation.invalid(
+        'El documento no indica que seas estudiante. '
+        'Solo se aceptan carnets de estudiante.',
+      );
+    }
+
+    // 4. Debe tener suficientes marcadores propios del carnet.
     final markers = [
       _roleStudent.hasMatch(t),
       _carnetNumber.hasMatch(t),
@@ -101,4 +126,3 @@ class CarnetValidator {
     return const CarnetValidation.valid();
   }
 }
-

@@ -7,9 +7,8 @@ import '../../../models/carnet_verification.dart';
 
 /// Pantalla con el resultado de la verificación del carnet universitario.
 class ScanResultScreen extends StatelessWidget {
-  final dynamic scannedData;
-
   const ScanResultScreen({super.key, required this.scannedData});
+  final dynamic scannedData;
 
   CarnetVerification _resolveResult() {
     if (scannedData is CarnetVerification) {
@@ -73,9 +72,7 @@ class ScanResultScreen extends StatelessWidget {
                         ? const Color(0xFF2E7D32)
                         : const Color(0xFFC62828),
                   ),
-                )
-                    .animate()
-                    .scale(
+                ).animate().scale(
                       begin: const Offset(0.3, 0.3),
                       duration: 500.ms,
                       curve: Curves.elasticOut,
@@ -176,7 +173,8 @@ class ScanResultScreen extends StatelessWidget {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.verified, size: 12, color: Colors.white),
+                                  Icon(Icons.verified,
+                                      size: 12, color: Colors.white),
                                   SizedBox(width: 4),
                                   Text(
                                     'ACTIVO',
@@ -311,11 +309,14 @@ class ScanResultScreen extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 10),
-                        Text('• El código de barras o QR está borroso o deteriorado.'),
+                        Text(
+                            '• El código de barras o QR está borroso o deteriorado.'),
                         SizedBox(height: 6),
-                        Text('• El carnet ya fue registrado con otro correo institucional.'),
+                        Text(
+                            '• El carnet ya fue registrado con otro correo institucional.'),
                         SizedBox(height: 6),
-                        Text('• El carnet no está registrado como vigente en el sistema DACE.'),
+                        Text(
+                            '• El carnet no está registrado como vigente en el sistema DACE.'),
                       ],
                     ),
                   ),

@@ -1,42 +1,53 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../config/app_constants.dart';
-
 /// Servicio de autenticación — lógica de negocio de auth.
 class AuthService {
+  AuthService(this._client);
   final SupabaseClient _client;
 
-  AuthService(this._client);
-
-  /// Registra un estudiante con correo @correo.unimet.edu.ve y nombre en Supabase.
-  /// Lanza [AuthException] si el correo no es válido o si falla.
+  /// Registra una cuenta en Supabase.
+  ///
+  /// Los metadatos viajan con los nombres que espera el trigger del servidor:
+  /// `tipo_cuenta`, `empresa_nombre`, `empresa_tipo`, `telefono`, `nombre` y
+  /// `apellido`.
   Future<AuthResponse> signUp({
     required String email,
     required String password,
-    String? fullName,
+    String? nombre,
+    String? apellido,
+    String? fechaNacimiento,
+    String tipoCuenta = 'estudiante',
+    String? tipoEmpresa,
+    String? telefono,
   }) async {
-    _validateUnimetEmail(email);
+    final esEmpresa = tipoCuenta == 'empresa';
 
-    String? nombre;
-    String? apellido;
-    if (fullName != null && fullName.trim().isNotEmpty) {
-      final parts = fullName.trim().split(RegExp(r'\s+'));
-      if (parts.length == 1) {
-        nombre = parts[0];
-      } else {
-        nombre = parts.sublist(0, parts.length - 1).join(' ');
-        apellido = parts.last;
+    final data = <String, dynamic>{'tipo_cuenta': tipoCuenta};
+
+    if (esEmpresa) {
+      data['empresa_nombre'] = (nombre ?? '').trim();
+      if (tipoEmpresa != null && tipoEmpresa.trim().isNotEmpty) {
+        data['empresa_tipo'] = tipoEmpresa.trim();
+      }
+      if (telefono != null && telefono.trim().isNotEmpty) {
+        data['telefono'] = telefono.trim();
+      }
+    } else {
+      if (nombre != null && nombre.trim().isNotEmpty) {
+        data['nombre'] = nombre.trim();
+      }
+      if (apellido != null && apellido.trim().isNotEmpty) {
+        data['apellido'] = apellido.trim();
+      }
+      if (fechaNacimiento != null && fechaNacimiento.isNotEmpty) {
+        data['fecha_nacimiento'] = fechaNacimiento;
       }
     }
 
     return _client.auth.signUp(
-      email: email,
+      email: email.trim().toLowerCase(),
       password: password,
-      data: {
-        if (fullName != null) 'full_name': fullName.trim(),
-        if (nombre != null) 'nombre': nombre,
-        if (apellido != null) 'apellido': apellido,
-      },
+      data: data,
     );
   }
 
@@ -45,7 +56,6 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    _validateUnimetEmail(email);
     return _client.auth.signInWithPassword(email: email, password: password);
   }
 
@@ -62,17 +72,6 @@ class AuthService {
 
   /// Envía correo para restablecer contraseña.
   Future<void> resetPassword(String email) async {
-    _validateUnimetEmail(email);
     await _client.auth.resetPasswordForEmail(email);
-  }
-
-  // ─── Privados ────────────────────────────────────────────────────
-  void _validateUnimetEmail(String email) {
-    final normalized = email.trim().toLowerCase();
-    if (!normalized.endsWith(AppConstants.emailSuffix)) {
-      throw AuthException(
-        'Solo se permiten correos @${AppConstants.universityDomain}',
-      );
-    }
   }
 }

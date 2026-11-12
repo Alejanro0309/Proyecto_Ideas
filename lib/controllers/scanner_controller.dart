@@ -10,14 +10,6 @@ import 'providers.dart';
 
 /// Estado de la pantalla de escaneo
 class ScannerState {
-  final bool isScanning; // leyendo la foto con OCR
-  final bool isVerifying; // guardando o verificando
-  final bool isFlashOn;
-  final bool isFrontCamera;
-  final CarnetData? scannedData;
-  final CarnetVerification? lastResult;
-  final String? errorMessage;
-
   const ScannerState({
     this.isScanning = false,
     this.isVerifying = false,
@@ -27,6 +19,13 @@ class ScannerState {
     this.lastResult,
     this.errorMessage,
   });
+  final bool isScanning; // leyendo la foto con OCR
+  final bool isVerifying; // guardando o verificando
+  final bool isFlashOn;
+  final bool isFrontCamera;
+  final CarnetData? scannedData;
+  final CarnetVerification? lastResult;
+  final String? errorMessage;
 
   ScannerState copyWith({
     bool? isScanning,
@@ -52,13 +51,12 @@ class ScannerState {
 
 /// Controlador de la lógica de escaneo y verificación de carnets
 class ScannerController extends StateNotifier<ScannerState> {
+  ScannerController(this._service, this._ref) : super(const ScannerState());
   final ScannerService _service;
   final Ref _ref;
 
   DateTime? _lastScanTime;
   String? _lastCode;
-
-  ScannerController(this._service, this._ref) : super(const ScannerState());
 
   /// Procesa un código detectado por código de barras, QR o prueba
   Future<CarnetVerification?> processScannedCode(String rawCode) async {

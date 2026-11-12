@@ -25,10 +25,7 @@ class OnboardingScreen extends StatelessWidget {
                 Icons.school_rounded,
                 size: 100,
                 color: _unimetBlue,
-              )
-                  .animate()
-                  .fadeIn(duration: 500.ms)
-                  .slideY(begin: -0.2),
+              ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.2),
               const SizedBox(height: 32),
               const Text(
                 '¡Bienvenido a\nUnimet App!',

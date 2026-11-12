@@ -37,4 +37,3 @@ V-12.345.678
     expect(CarnetValidator.validate('hola mundo').isValid, isFalse);
   });
 }
-

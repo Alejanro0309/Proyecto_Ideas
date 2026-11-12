@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  archive:
+    dependency: transitive
+    description:
+      name: archive
+      sha256: de5ac590b8155e4e676088d714bd41ea620449a6adc0f7950c5073874b287ddb
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.6.0"
   args:
     dependency: transitive
     description:
@@ -377,6 +385,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.15"
+  dotted_border:
+    dependency: "direct main"
+    description:
+      name: dotted_border
+      sha256: "99b091ec6891ba0c5331fdc2b502993c7c108f898995739a73c6845d71dad70c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   equatable:
     dependency: "direct main"
     description:
@@ -486,6 +502,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  flutter_localizations:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -648,6 +669,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  image:
+    dependency: "direct main"
+    description:
+      name: image
+      sha256: "89ed75b2f8231fe676808c5564f9590d728024ded7ac782a7ed8474f1c95b72a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.12.0"
   image_picker:
     dependency: "direct main"
     description:
@@ -716,10 +745,10 @@ packages:
     dependency: "direct main"
     description:
       name: intl
-      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.0"
+    version: "0.20.3"
   io:
     dependency: transitive
     description:
@@ -1040,6 +1069,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.3"
+  posix:
+    dependency: transitive
+    description:
+      name: posix
+      sha256: "613646d076944f3acc125830af935b48d4b8a57a388691547bbfd25b434f4d63"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.5.4"
   postgrest:
     dependency: transitive
     description:
@@ -1064,6 +1101,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.7.0"
+  qr:
+    dependency: transitive
+    description:
+      name: qr
+      sha256: "2c0189dca64a3ab08dda7acd7911c89af2374f08eb4eaded3e8ef4609f3b9c8b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.3"
+  qr_flutter:
+    dependency: "direct main"
+    description:
+      name: qr_flutter
+      sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
   realtime_client:
     dependency: transitive
     description:
@@ -1318,7 +1371,7 @@ packages:
     source: hosted
     version: "1.4.1"
   supabase:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: supabase
       sha256: "123fe08792b24e5e7c4b9a01145de8e95ebaa9183cd5f3c9d48dd2ff890f28a6"
@@ -1382,7 +1435,7 @@ packages:
     source: hosted
     version: "1.4.0"
   url_launcher:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: url_launcher
       sha256: e8cc955c97e06df9879140a1fe301f3d493f01b7c62dec7f46834be31d7e9fda

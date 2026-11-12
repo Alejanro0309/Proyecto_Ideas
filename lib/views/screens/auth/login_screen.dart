@@ -44,7 +44,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       context.go(AppRoutes.home);
     } else if (formState.status == AuthStatus.error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(formState.errorMessage ?? 'Error al iniciar sesión')),
+        SnackBar(
+            content: Text(formState.errorMessage ?? 'Error al iniciar sesión')),
       );
     }
   }
@@ -183,4 +184,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
-

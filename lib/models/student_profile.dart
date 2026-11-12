@@ -1,16 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-/// Modelo de perfil de estudiante (mapeado a la tabla public.perfiles).
+/// Modelo de perfil (mapeado a la tabla public.perfiles).
 class StudentProfile extends Equatable {
-  final String id;
-  final String email;
-  final String? firstName;
-  final String? lastName;
-  final String? cedula;
-  final String? carnetCode;
-  final bool isCarnetVerified;
-  final DateTime createdAt;
-
   const StudentProfile({
     required this.id,
     required this.email,
@@ -19,14 +10,13 @@ class StudentProfile extends Equatable {
     this.cedula,
     this.carnetCode,
     this.isCarnetVerified = false,
+    this.rol,
+    this.tipoCuenta,
+    this.fechaNacimiento,
+    this.tipoEmpresa,
+    this.telefono,
     required this.createdAt,
   });
-
-  String get fullName {
-    final parts = [firstName, lastName].where((s) => s != null && s.isNotEmpty);
-    if (parts.isEmpty) return email.split('@').first;
-    return parts.join(' ');
-  }
 
   factory StudentProfile.fromJson(Map<String, dynamic> json) {
     return StudentProfile(
@@ -38,6 +28,13 @@ class StudentProfile extends Equatable {
       carnetCode: (json['carnet_codigo'] ?? json['carnet_code']) as String?,
       isCarnetVerified:
           (json['verificado'] ?? json['is_carnet_verified']) as bool? ?? false,
+      rol: json['rol'] as String?,
+      tipoCuenta: json['tipo_cuenta'] as String?,
+      fechaNacimiento: json['fecha_nacimiento'] == null
+          ? null
+          : DateTime.parse(json['fecha_nacimiento'] as String),
+      tipoEmpresa: json['tipo_empresa'] as String?,
+      telefono: json['telefono'] as String?,
       createdAt: json['creado_en'] != null
           ? DateTime.parse(json['creado_en'] as String)
           : (json['created_at'] != null
@@ -46,10 +43,33 @@ class StudentProfile extends Equatable {
     );
   }
 
-  /// Solo nombre y apellido: son las únicas columnas que RLS deja editar.
+  final String id;
+  final String email;
+  final String? firstName;
+  final String? lastName;
+  final String? cedula;
+  final String? carnetCode;
+  final bool isCarnetVerified;
+  final String? rol;
+  final String? tipoCuenta;
+  final DateTime? fechaNacimiento;
+  final String? tipoEmpresa;
+  final String? telefono;
+  final DateTime createdAt;
+
+  bool get esEmpresa => rol == 'empresa' || tipoCuenta == 'empresa';
+
+  String get fullName {
+    final parts = [firstName, lastName].where((s) => s != null && s.isNotEmpty);
+    if (parts.isEmpty) return email.split('@').first;
+    return parts.join(' ');
+  }
+
+  /// Solo nombre, apellido y fecha de nacimiento: lo que RLS deja editar.
   Map<String, dynamic> toJson() => {
         'nombre': firstName,
         'apellido': lastName,
+        'fecha_nacimiento': fechaNacimiento?.toIso8601String().split('T').first,
       };
 
   StudentProfile copyWith({
@@ -58,6 +78,11 @@ class StudentProfile extends Equatable {
     String? cedula,
     String? carnetCode,
     bool? isCarnetVerified,
+    String? rol,
+    String? tipoCuenta,
+    DateTime? fechaNacimiento,
+    String? tipoEmpresa,
+    String? telefono,
   }) {
     return StudentProfile(
       id: id,
@@ -67,6 +92,11 @@ class StudentProfile extends Equatable {
       cedula: cedula ?? this.cedula,
       carnetCode: carnetCode ?? this.carnetCode,
       isCarnetVerified: isCarnetVerified ?? this.isCarnetVerified,
+      rol: rol ?? this.rol,
+      tipoCuenta: tipoCuenta ?? this.tipoCuenta,
+      fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
+      tipoEmpresa: tipoEmpresa ?? this.tipoEmpresa,
+      telefono: telefono ?? this.telefono,
       createdAt: createdAt,
     );
   }
@@ -80,6 +110,11 @@ class StudentProfile extends Equatable {
         cedula,
         carnetCode,
         isCarnetVerified,
+        rol,
+        tipoCuenta,
+        fechaNacimiento,
+        tipoEmpresa,
+        telefono,
         createdAt,
       ];
 }

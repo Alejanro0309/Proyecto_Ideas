@@ -1,81 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="App para estudiantes de la Universidad Metropolitana (Unimet).">
-
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="unimet_app">
+  <meta name="apple-mobile-web-app-title" content="Unimet App">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>Unimet App - Pantalla Principal</title>
+  <title>Unimet App</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Tesseract.js v5 para OCR en Web -->
+  <!--
+    Tesseract.js v5 — OCR en el navegador.
+    Se define window.recognizeCarnetText(), que el código Dart llama
+    mediante la declaración @JS('recognizeCarnetText') en ocr_service_web.dart.
+  -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
-    let _tesseractWorker = null;
-    let _workerInitializing = null;
+    // Worker reutilizable (se inicializa una sola vez por sesión).
+    var _tessWorker = null;
+    var _tessInit = null;
 
-    async function getWorker() {
-      if (_tesseractWorker) return _tesseractWorker;
-      if (_workerInitializing) return _workerInitializing;
+    function _getWorker() {
+      if (_tessWorker) return Promise.resolve(_tessWorker);
+      if (_tessInit) return _tessInit;
 
-      _workerInitializing = (async () => {
-        try {
-          const worker = await Tesseract.createWorker(['spa', 'eng']);
-          _tesseractWorker = worker;
-          return worker;
-        } catch (e) {
-          console.warn("Fallo inicializando worker multilingüe, reintentando solo 'spa':", e);
-          const worker = await Tesseract.createWorker('spa');
-          _tesseractWorker = worker;
-          return worker;
-        } finally {
-          _workerInitializing = null;
-        }
-      })();
+      _tessInit = Tesseract.createWorker(['spa', 'eng']).then(function(w) {
+        _tessWorker = w;
+        _tessInit = null;
+        return w;
+      }).catch(function(e) {
+        // Fallback: solo español
+        return Tesseract.createWorker('spa').then(function(w) {
+          _tessWorker = w;
+          _tessInit = null;
+          return w;
+        });
+      });
 
-      return _workerInitializing;
+      return _tessInit;
     }
 
-    window.recognizeCarnetText = async function(imageSource) {
-      if (typeof Tesseract === 'undefined') {
-        throw new Error("Tesseract.js no está disponible. Revisa tu conexión a internet.");
-      }
-      try {
-        const worker = await getWorker();
-        const ret = await worker.recognize(imageSource);
-        return (ret && ret.data && ret.data.text) ? ret.data.text : "";
-      } catch (err) {
-        console.error("Error reconociendo texto con worker:", err);
-        _tesseractWorker = null;
-        // Fallback directo sin worker reutilizado
-        const res = await Tesseract.recognize(imageSource, 'spa');
-        return (res && res.data && res.data.text) ? res.data.text : "";
-      }
-    };
+    /**
+     * Función llamada desde Dart (ocr_service_web.dart) vía @JS.
+     * @param {string} imageSource - Data URL base64 de la imagen preprocesada.
+     * @returns {Promise<string>} Texto reconocido.
+     */
+    function recognizeCarnetText(imageSource) {
+      return _getWorker().then(function(worker) {
+        return worker.recognize(imageSource);
+      }).then(function(ret) {
+        return (ret && ret.data && ret.data.text) ? ret.data.text : '';
+      }).catch(function(err) {
+        // Si el worker falla, resetear y lanzar el error para que Dart lo reciba
+        _tessWorker = null;
+        return Promise.reject('OCR error: ' + err);
+      });
+    }
   </script>
 </head>
 <body>

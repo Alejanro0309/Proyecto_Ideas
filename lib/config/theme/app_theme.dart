@@ -96,8 +96,7 @@ class AppTheme {
         ),
       );
 
-  static FilledButtonThemeData _filledButtonTheme() =>
-      FilledButtonThemeData(
+  static FilledButtonThemeData _filledButtonTheme() => FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: _primaryColor,
           foregroundColor: Colors.white,
@@ -131,8 +130,7 @@ class AppTheme {
         ),
       );
 
-  static TextButtonThemeData _textButtonTheme() =>
-      TextButtonThemeData(
+  static TextButtonThemeData _textButtonTheme() => TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: _primaryColor,
           textStyle: const TextStyle(

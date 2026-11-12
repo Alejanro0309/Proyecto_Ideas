@@ -73,13 +73,16 @@ class HomeScreen extends ConsumerWidget {
               data: (profile) {
                 final isVerified = profile?.isCarnetVerified ?? false;
 
-                if (isVerified) {
+                // Si ya está verificado, o si es una cuenta de empresa, se
+                // puede probar el resto de la app sin pasar por el escáner.
+                if (isVerified || profile?.esEmpresa == true) {
                   return Card(
                     elevation: 2,
                     color: const Color(0xFFE8F5E9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: Color(0xFF81C784), width: 1.5),
+                      side: const BorderSide(
+                          color: Color(0xFF81C784), width: 1.5),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
@@ -95,14 +98,15 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                       subtitle: Text(
-                        'Código: ${profile?.carnetCode ?? 'Verificado'}\nPulsa para ver tu credencial',
+                        'Código: ${profile?.carnetCode ?? 'Verificado'}\n'
+                        'Tu carnet ya está registrado.',
                         style: const TextStyle(color: Color(0xFF2E7D32)),
                       ),
                       trailing: const Icon(
                         Icons.chevron_right_rounded,
                         color: Color(0xFF1B5E20),
                       ),
-                      onTap: () => context.push(AppRoutes.profile),
+                      onTap: () => context.go(AppRoutes.panel),
                     ),
                   );
                 }

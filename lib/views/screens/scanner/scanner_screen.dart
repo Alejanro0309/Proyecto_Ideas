@@ -134,7 +134,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text('$career\nCódigo: $code'),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                    trailing:
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                     onTap: () {
                       Navigator.pop(bottomSheetContext);
                       _handleBarcodeDetected(code);
@@ -151,7 +152,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   labelText: 'Escribir código manual',
                   hintText: 'Ej. UNIMET-2024-XXXXX',
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.send_rounded, color: Color(0xFF003A70)),
+                    icon: const Icon(Icons.send_rounded,
+                        color: Color(0xFF003A70)),
                     onPressed: () {
                       final code = manualCodeCtrl.text.trim();
                       if (code.isNotEmpty) {
@@ -265,7 +267,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                           backgroundColor: const Color(0xFF003A70),
                           foregroundColor: Colors.white,
                         ),
-                        icon: const Icon(Icons.science_rounded, color: Colors.white),
+                        icon: const Icon(Icons.science_rounded,
+                            color: Colors.white),
                         label: const Text('Usar carnets de prueba'),
                       ),
                     ],

@@ -10,15 +10,6 @@ enum VerificationStatus {
 
 /// Resultado de guardar/verificar los datos de un carnet universitario.
 class CarnetVerification extends Equatable {
-  final String code;
-  final bool isSuccess;
-  final String message;
-  final String? cedula;
-  final String? studentName;
-  final String? career;
-  final DateTime verifiedAt;
-  final VerificationStatus status;
-
   const CarnetVerification({
     required this.code,
     required this.isSuccess,
@@ -62,6 +53,14 @@ class CarnetVerification extends Equatable {
       status: status,
     );
   }
+  final String code;
+  final bool isSuccess;
+  final String message;
+  final String? cedula;
+  final String? studentName;
+  final String? career;
+  final DateTime verifiedAt;
+  final VerificationStatus status;
 
   @override
   List<Object?> get props => [

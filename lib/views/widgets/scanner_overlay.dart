@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 
 /// Visor interactivo con marco guía recortado y animación de línea láser de escaneo.
 class ScannerOverlay extends StatefulWidget {
-  final double scanBoxWidth;
-  final double scanBoxHeight;
-
   const ScannerOverlay({
     super.key,
     this.scanBoxWidth = 280,
     this.scanBoxHeight = 200,
   });
+  final double scanBoxWidth;
+  final double scanBoxHeight;
 
   @override
   State<ScannerOverlay> createState() => _ScannerOverlayState();
@@ -157,12 +156,11 @@ class _ScannerOverlayState extends State<ScannerOverlay>
 }
 
 class _CornerIndicator extends StatelessWidget {
+  const _CornerIndicator({required this.alignment});
   final Alignment alignment;
   static const double _length = 26;
   static const double _thickness = 4.5;
   static const Color _gold = Color(0xFFE8A317);
-
-  const _CornerIndicator({required this.alignment});
 
   @override
   Widget build(BuildContext context) {
@@ -191,13 +189,15 @@ class _CornerIndicator extends StatelessWidget {
           ),
           borderRadius: BorderRadius.only(
             topLeft: isTop && isLeft ? const Radius.circular(16) : Radius.zero,
-            topRight: isTop && !isLeft ? const Radius.circular(16) : Radius.zero,
-            bottomLeft: !isTop && isLeft ? const Radius.circular(16) : Radius.zero,
-            bottomRight: !isTop && !isLeft ? const Radius.circular(16) : Radius.zero,
+            topRight:
+                isTop && !isLeft ? const Radius.circular(16) : Radius.zero,
+            bottomLeft:
+                !isTop && isLeft ? const Radius.circular(16) : Radius.zero,
+            bottomRight:
+                !isTop && !isLeft ? const Radius.circular(16) : Radius.zero,
           ),
         ),
       ),
     );
   }
 }
-
