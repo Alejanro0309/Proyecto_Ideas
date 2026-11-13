@@ -65,6 +65,16 @@ final currentUserProvider = Provider<User?>(
       ?.user,
 );
 
+/// Id del usuario autenticado.
+///
+/// TODOS los providers con datos de usuario lo observan (o son `autoDispose`)
+/// para reconstruirse solos al cambiar de cuenta. Sin esto, al pasar de la
+/// cuenta A a la B seguían viéndose los datos de A (y eran datos de otra
+/// persona: un problema de privacidad).
+final authUserIdProvider = Provider<String?>(
+  (ref) => ref.watch(currentUserProvider)?.id,
+);
+
 // ─── Perfil del estudiante ───────────────────────────────────────────
 final studentProfileProvider =
     FutureProvider.autoDispose<StudentProfile?>((ref) async {

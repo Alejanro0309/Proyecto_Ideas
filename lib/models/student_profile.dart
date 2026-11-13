@@ -23,7 +23,11 @@ class StudentProfile extends Equatable {
       id: json['id'] as String,
       email: (json['correo'] ?? json['email'] ?? '') as String,
       firstName: (json['nombre'] ?? json['first_name']) as String?,
-      lastName: (json['apellido'] ?? json['last_name']) as String?,
+      // `perfiles` es ahora una vista sobre `estudiantes`/`empresas_nueva` y
+      // expone `apellidos` (en plural). Se aceptan ambas claves para no perder
+      // el apellido con las funciones viejas.
+      lastName:
+          (json['apellidos'] ?? json['apellido'] ?? json['last_name']) as String?,
       cedula: json['cedula'] as String?,
       carnetCode: (json['carnet_codigo'] ?? json['carnet_code']) as String?,
       isCarnetVerified:

@@ -70,6 +70,7 @@ class RumboButton extends StatelessWidget {
       icon: icon,
       showSpinner: isLoading,
       foreground: _foreground,
+      expanded: expanded,
     );
 
     final button = switch (variant) {
@@ -121,13 +122,14 @@ class RumboButton extends StatelessWidget {
     };
 
     if (!expanded) {
-      return IntrinsicWidth(
-        stepHeight: 52,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: isLoading ? 0.5 : 1,
-          child: button,
-        ),
+      // Sin `IntrinsicWidth`: con él el botón pedía el ancho completo del
+      // padre y la etiqueta quedaba aplastada dentro. El botón se mide por su
+      // contenido (y el `Wrap` de la fila de acciones lo baja a la siguiente
+      // línea si no cabe).
+      return AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: isLoading ? 0.5 : 1,
+        child: button,
       );
     }
 
@@ -159,16 +161,21 @@ class _ButtonContent extends StatelessWidget {
     required this.foreground,
     this.icon,
     this.showSpinner = false,
+    this.expanded = true,
   });
   final String label;
   final IconData? icon;
   final bool showSpinner;
   final Color foreground;
 
+  /// `true` cuando el botón se estira al ancho disponible (formularios).
+  /// `false` cuando el botón se mide por su contenido (filas de acciones).
+  final bool expanded;
+
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (showSpinner) ...[
@@ -185,17 +192,32 @@ class _ButtonContent extends StatelessWidget {
           Icon(icon, size: 18),
           const SizedBox(width: 8),
         ],
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
+        // Expandido: el texto puede ocupar dos líneas antes que recortarse.
+        // Contenido: una sola línea, sin recortes; el `Wrap` de la fila de
+        // acciones lo baja a la siguiente línea si no cabe.
+        expanded
+            ? Expanded(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )
+            : Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
       ],
     );
   }

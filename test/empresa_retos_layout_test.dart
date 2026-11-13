@@ -16,7 +16,7 @@ class _RepoFalso implements RetosRepository {
 /// "Mis retos" (con el botón "Ver") no desborda ni lanza
 /// "BoxConstraints forces an infinite width" a distintos anchos y escalas.
 class _ControladorConDatos extends EmpresaRetosController {
-  _ControladorConDatos() : super(_RepoFalso()) {
+  _ControladorConDatos() : super(_RepoFalso(), "u1") {
     state = EmpresaState(
       isLoading: false,
       retos: [
@@ -120,7 +120,7 @@ void main() {
 }
 
 class _ControladorVacio extends EmpresaRetosController {
-  _ControladorVacio() : super(_RepoFalso()) {
+  _ControladorVacio() : super(_RepoFalso(), "u1") {
     state = const EmpresaState(isLoading: false, retos: []);
   }
 

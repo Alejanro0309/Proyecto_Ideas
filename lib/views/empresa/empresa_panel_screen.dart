@@ -563,13 +563,19 @@ class _RetoResumen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          // Badge + contador: en un `Wrap` para que, si no caben a texto
+          // grande, pasen a la línea siguiente en vez de desbordar.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _BadgeEstado(estado: _estadoMostrado(reto)),
-              const Spacer(),
               if (reto.candidatosPendientes > 0)
                 Text(
                   '${reto.candidatosPendientes} nuevos',
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,

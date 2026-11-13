@@ -15,6 +15,7 @@ import '../../widgets/rumbo_logo.dart';
 import '../../student/carnet_gate.dart';
 import '../login_screen.dart' show translateAuthError;
 import 'error_banner_translated.dart';
+import 'password_field.dart';
 import 'tipo_cuenta_selector.dart';
 
 /// Tarjeta blanca centrada con el formulario de ingreso o registro.
@@ -48,8 +49,6 @@ class _AuthCardState extends ConsumerState<AuthCard> {
   final _tipoEmpresaCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
 
-  bool _obscurePassword = true;
-  bool _obscureConfirm = true;
   bool _termsAccepted = false;
   String? _formError;
 
@@ -394,9 +393,9 @@ class _AuthCardState extends ConsumerState<AuthCard> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    PasswordField(
                       controller: _passwordCtrl,
-                      obscureText: _obscurePassword,
+                      label: 'Contraseña',
                       textInputAction: widget.isRegisterMode
                           ? TextInputAction.next
                           : TextInputAction.done,
@@ -404,58 +403,18 @@ class _AuthCardState extends ConsumerState<AuthCard> {
                       validator: _validatePassword,
                       onFieldSubmitted:
                           widget.isRegisterMode ? null : (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: Semantics(
-                          label: _obscurePassword
-                              ? 'Mostrar contraseña'
-                              : 'Ocultar contraseña',
-                          button: true,
-                          child: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
-                      ),
                     ),
                     if (widget.isRegisterMode) ...[
                       const SizedBox(height: 8),
                       _PasswordStrengthBar(controller: _passwordCtrl),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      PasswordField(
                         controller: _confirmCtrl,
-                        obscureText: _obscureConfirm,
+                        label: 'Confirmar contraseña',
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.password],
                         validator: (v) => _validateConfirm(v),
                         onFieldSubmitted: (_) => _submit(),
-                        decoration: InputDecoration(
-                          labelText: 'Confirmar contraseña',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: Semantics(
-                            label: _obscureConfirm
-                                ? 'Mostrar contraseña'
-                                : 'Ocultar contraseña',
-                            button: true,
-                            child: IconButton(
-                              icon: Icon(
-                                _obscureConfirm
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscureConfirm = !_obscureConfirm,
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 16),
                       _TermsCheckbox(

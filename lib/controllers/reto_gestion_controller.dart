@@ -14,6 +14,16 @@ class RetoGestionState {
     this.isLoading = true,
     this.isSaving = false,
     this.errorMessage,
+    this.detalleError,
+    this.esErrorDeRed = false,
+    this.cargandoCandidatos = true,
+    this.errorCandidatos,
+    this.detalleCandidatos,
+    this.esRedCandidatos = false,
+    this.cargandoParticipantes = true,
+    this.errorParticipantes,
+    this.detalleParticipantes,
+    this.esRedParticipantes = false,
   });
   final RetoEditable? reto;
   final List<Candidato> candidatos;
@@ -22,6 +32,27 @@ class RetoGestionState {
   final bool isSaving;
   final String? errorMessage;
 
+  /// Error real (excepción) para modo debug. Nunca se muestra en release.
+  final String? detalleError;
+
+  /// True cuando el fallo es de conexión: cambia el icono del bloque.
+  final bool esErrorDeRed;
+
+  // ── Sección Candidatos (independiente del Resumen) ──────────────────
+  final bool cargandoCandidatos;
+  final String? errorCandidatos;
+  final String? detalleCandidatos;
+  final bool esRedCandidatos;
+
+  // ── Secciones En curso / Entregas (viven de `participantes`) ────────
+  final bool cargandoParticipantes;
+  final String? errorParticipantes;
+  final String? detalleParticipantes;
+  final bool esRedParticipantes;
+
+  bool get cargandoAlgo =>
+      isLoading || cargandoCandidatos || cargandoParticipantes;
+
   RetoGestionState copyWith({
     RetoEditable? reto,
     List<Candidato>? candidatos,
@@ -29,7 +60,19 @@ class RetoGestionState {
     bool? isLoading,
     bool? isSaving,
     String? errorMessage,
+    String? detalleError,
+    bool? esErrorDeRed,
+    bool? cargandoCandidatos,
+    String? errorCandidatos,
+    String? detalleCandidatos,
+    bool? esRedCandidatos,
+    bool? cargandoParticipantes,
+    String? errorParticipantes,
+    String? detalleParticipantes,
+    bool? esRedParticipantes,
     bool limpiarError = false,
+    bool limpiarCandidatos = false,
+    bool limpiarParticipantes = false,
   }) =>
       RetoGestionState(
         reto: reto ?? this.reto,
@@ -38,7 +81,55 @@ class RetoGestionState {
         isLoading: isLoading ?? this.isLoading,
         isSaving: isSaving ?? this.isSaving,
         errorMessage: limpiarError ? null : (errorMessage ?? this.errorMessage),
+        detalleError: limpiarError ? null : (detalleError ?? this.detalleError),
+        esErrorDeRed: limpiarError ? false : (esErrorDeRed ?? this.esErrorDeRed),
+        cargandoCandidatos:
+            cargandoCandidatos ?? this.cargandoCandidatos,
+        errorCandidatos: limpiarCandidatos
+            ? null
+            : (errorCandidatos ?? this.errorCandidatos),
+        detalleCandidatos: limpiarCandidatos
+            ? null
+            : (detalleCandidatos ?? this.detalleCandidatos),
+        esRedCandidatos: limpiarCandidatos
+            ? false
+            : (esRedCandidatos ?? this.esRedCandidatos),
+        cargandoParticipantes:
+            cargandoParticipantes ?? this.cargandoParticipantes,
+        errorParticipantes: limpiarParticipantes
+            ? null
+            : (errorParticipantes ?? this.errorParticipantes),
+        detalleParticipantes: limpiarParticipantes
+            ? null
+            : (detalleParticipantes ?? this.detalleParticipantes),
+        esRedParticipantes: limpiarParticipantes
+            ? false
+            : (esRedParticipantes ?? this.esRedParticipantes),
       );
+}
+
+/// Mensaje específico para la carga del detalle de un reto.
+///
+/// El mensaje genérico "No pudimos completar la acción" no dice nada y usaba el
+/// icono de "sin internet" para cualquier fallo. Aquí se distingue cada caso.
+String _mapearErrorCarga(Object e) {
+  if (e is RetoSinPermisoException || e is SinPermisoException) {
+    return 'No tienes permiso para ver este reto.';
+  }
+  if (e is NoAutenticadoException) return 'Inicia sesión para continuar.';
+  if (e is RetoNoEncontradoException) return 'Este reto ya no existe.';
+  if (esErrorDeRed(e)) return 'No hay conexión. Revisa tu internet.';
+  return 'No pudimos cargar el reto.';
+}
+
+/// Detecta errores de red sin usar `dart:io` (no existe en Flutter web).
+bool esErrorDeRed(Object e) {
+  final m = e.toString().toLowerCase();
+  return m.contains('network') ||
+      m.contains('socket') ||
+      m.contains('connection') ||
+      m.contains('failed host') ||
+      m.contains('timeout');
 }
 
 class RetoGestionController extends StateNotifier<RetoGestionState> {
@@ -50,25 +141,71 @@ class RetoGestionController extends StateNotifier<RetoGestionState> {
   final RetosRepository _repo;
   final String _retoId;
 
+  /// Carga las tres secciones en paralelo pero con estado INDEPENDIENTE:
+  /// si fallan los candidatos, el Resumen se sigue viendo y solo esa pestaña
+  /// muestra su error con su "Reintentar".
   Future<void> cargar() async {
+    await Future.wait([
+      cargarResumen(),
+      cargarCandidatos(),
+      cargarParticipantes(),
+    ]);
+  }
+
+  Future<void> cargarResumen() async {
     state = state.copyWith(isLoading: true, limpiarError: true);
     try {
-      final resultados = await Future.wait([
-        _repo.detalleRetoEmpresa(_retoId),
-        _repo.candidatosReto(_retoId),
-        _repo.participantesReto(_retoId),
-      ]);
+      final reto = await _repo.detalleRetoEmpresa(_retoId);
+      state = state.copyWith(reto: reto, isLoading: false);
+    } catch (e, st) {
+      debugPrint('[reto-gestion] resumen FALLÓ: $e\n$st');
       state = state.copyWith(
-        reto: resultados[0] as RetoEditable?,
-        candidatos: resultados[1] as List<Candidato>,
-        participantes: resultados[2] as List<Participante>,
         isLoading: false,
+        errorMessage: _mapearErrorCarga(e),
+        detalleError: e.toString(),
+        esErrorDeRed: esErrorDeRed(e),
+      );
+    }
+  }
+
+  Future<void> cargarCandidatos() async {
+    state = state.copyWith(cargandoCandidatos: true, limpiarCandidatos: true);
+    try {
+      final candidatos = await _repo.candidatosReto(_retoId);
+      state = state.copyWith(
+        candidatos: candidatos,
+        cargandoCandidatos: false,
       );
     } catch (e, st) {
-      debugPrint('[reto-gestion] cargar FALLÓ: $e\n$st');
+      debugPrint('[reto-gestion] candidatos FALLÓ: $e\n$st');
       state = state.copyWith(
-        isLoading: false,
-        errorMessage: traducirExcepcion(e),
+        cargandoCandidatos: false,
+        errorCandidatos: 'No pudimos cargar los candidatos. Intenta de nuevo.',
+        detalleCandidatos: e.toString(),
+        esRedCandidatos: esErrorDeRed(e),
+      );
+    }
+  }
+
+  Future<void> cargarParticipantes() async {
+    state = state.copyWith(
+      cargandoParticipantes: true,
+      limpiarParticipantes: true,
+    );
+    try {
+      final participantes = await _repo.participantesReto(_retoId);
+      state = state.copyWith(
+        participantes: participantes,
+        cargandoParticipantes: false,
+      );
+    } catch (e, st) {
+      debugPrint('[reto-gestion] participantes FALLÓ: $e\n$st');
+      state = state.copyWith(
+        cargandoParticipantes: false,
+        errorParticipantes:
+            'No pudimos cargar los participantes. Intenta de nuevo.',
+        detalleParticipantes: e.toString(),
+        esRedParticipantes: esErrorDeRed(e),
       );
     }
   }

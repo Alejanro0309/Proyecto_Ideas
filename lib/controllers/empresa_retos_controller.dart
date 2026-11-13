@@ -59,19 +59,31 @@ class EmpresaState {
 }
 
 class EmpresaRetosController extends StateNotifier<EmpresaState> {
-  EmpresaRetosController(this._repo) : super(const EmpresaState()) {
+  EmpresaRetosController(this._repo, this._userId) : super(const EmpresaState()) {
     cargar();
   }
 
   final RetosRepository _repo;
 
+  /// Usuario del que son los datos. Si cambia, el provider se recrea y este
+  /// controlador deja de existir: sirve para descartar respuestas tardías.
+  final String? _userId;
+
   Future<void> cargar() async {
+    final userId = _userId;
+    if (userId == null) {
+      // Sin sesión no hay nada que cargar: nunca dejar la lista del anterior.
+      state = const EmpresaState(isLoading: false);
+      return;
+    }
     state = state.copyWith(isLoading: true, limpiarError: true);
     try {
       final retos = await _repo.misRetosEmpresa();
+      if (userId != _userId) return; // Respuesta tardía de otra cuenta.
       state = state.copyWith(retos: retos, isLoading: false);
     } catch (e, st) {
       debugPrint('[empresa-retos] cargar FALLÓ: $e\n$st');
+      if (userId != _userId) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'No pudimos cargar tus retos.',
@@ -110,7 +122,13 @@ class EmpresaRetosController extends StateNotifier<EmpresaState> {
   }
 }
 
+/// `autoDispose` + depende de `authUserIdProvider`: al cambiar de cuenta el
+/// controlador se recrea y carga los retos del usuario nuevo. Antes no era
+/// `autoDispose` y conservaba los datos de la cuenta anterior.
 final empresaRetosControllerProvider =
-    StateNotifierProvider<EmpresaRetosController, EmpresaState>(
-  (ref) => EmpresaRetosController(ref.watch(retosRepositoryProvider)),
+    StateNotifierProvider.autoDispose<EmpresaRetosController, EmpresaState>(
+  (ref) {
+    final userId = ref.watch(authUserIdProvider);
+    return EmpresaRetosController(ref.watch(retosRepositoryProvider), userId);
+  },
 );

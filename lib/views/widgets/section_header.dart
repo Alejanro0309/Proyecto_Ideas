@@ -86,9 +86,14 @@ class SectionHeader extends StatelessWidget {
         ),
         if (action != null) ...[
           const SizedBox(width: 12),
-          // La acción se ajusta a su contenido; sin esto, dentro de un Column
-          // con ancho infinito pide ancho infinito y rompe el layout.
-          IntrinsicWidth(child: action!),
+          // Sin `IntrinsicWidth`: con él el botón se medía por el ancho
+          // intrínseco justo y la etiqueta podía partirse en dos líneas.
+          // El botón se mide por su contenido (padding incluido) y el
+          // `Expanded` del título cede el espacio que falte.
+          Flexible(
+            fit: FlexFit.loose,
+            child: Align(alignment: Alignment.centerRight, child: action!),
+          ),
         ],
       ],
     );

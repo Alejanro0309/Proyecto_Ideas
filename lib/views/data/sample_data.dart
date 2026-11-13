@@ -212,7 +212,8 @@ const String kQrCodeUrl = 'https://rumbo.app/cv/3bafd35ccf';
 // o no hay sesión, se cae a los datos de ejemplo para que la UI no se quede
 // vacía durante el desarrollo.
 
-final retosRecientesProvider = FutureProvider<List<api.Reto>>((ref) async {
+final retosRecientesProvider = FutureProvider.autoDispose<List<api.Reto>>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   try {
     final repo = ref.watch(rumboRepositoryProvider);
     final retos = await repo.getRetos();
@@ -239,7 +240,8 @@ final retosRecientesProvider = FutureProvider<List<api.Reto>>((ref) async {
 
 /// Retos recomendados: lee del backend real para que los IDs sean válidos.
 /// Devuelve el modelo de `models/reto.dart` (el que usa `RetoCard`).
-final retosRecomendadosProvider = FutureProvider<List<api.Reto>>((ref) async {
+final retosRecomendadosProvider = FutureProvider.autoDispose<List<api.Reto>>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   try {
     final repo = ref.watch(rumboRepositoryProvider);
     // Solo 6, y sin los que el usuario ya aceptó (en curso o completados).
@@ -264,7 +266,8 @@ final retosRecomendadosProvider = FutureProvider<List<api.Reto>>((ref) async {
   ];
 });
 
-final retosActivosProvider = FutureProvider<List<RetoActivo>>((ref) async {
+final retosActivosProvider = FutureProvider.autoDispose<List<RetoActivo>>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   try {
     final repo = ref.watch(rumboRepositoryProvider);
     final activos = await repo.getRetosActivos();
@@ -275,7 +278,8 @@ final retosActivosProvider = FutureProvider<List<RetoActivo>>((ref) async {
 });
 
 /// Perfil del estudiante: usa el provider de Supabase del proyecto.
-final userProfileProvider = FutureProvider<UserProfile>((ref) async {
+final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   try {
     final profile = await ref.watch(studentProfileProvider.future).timeout(
           const Duration(seconds: 5),
@@ -303,12 +307,14 @@ int _porcentajePerfil(StudentProfile profile) {
   return puntos.clamp(0, 100);
 }
 
-final notificacionesProvider = FutureProvider<List<Notificacion>>((ref) async {
+final notificacionesProvider = FutureProvider.autoDispose<List<Notificacion>>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   // TODO(backend): no hay tabla de notificaciones todavía.
   return kNotificaciones;
 });
 
-final logrosProvider = FutureProvider<List<Logro>>((ref) async {
+final logrosProvider = FutureProvider.autoDispose<List<Logro>>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   try {
     final repo = ref.watch(rumboRepositoryProvider);
     final logros = await repo.getLogros();
@@ -318,7 +324,8 @@ final logrosProvider = FutureProvider<List<Logro>>((ref) async {
   return kLogros;
 });
 
-final qrCodeUrlProvider = FutureProvider<String>((ref) async {
+final qrCodeUrlProvider = FutureProvider.autoDispose<String>((ref) async {
+  ref.watch(authUserIdProvider); // Se reconstruye al cambiar de cuenta.
   try {
     final repo = ref.watch(rumboRepositoryProvider);
     final url = await repo.getQrCodeUrl();

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,6 +68,8 @@ class _EmpresaDetalleScreenState extends ConsumerState<EmpresaDetalleScreen>
                   : state.errorMessage != null
                       ? _ErrorBloque(
                           mensaje: state.errorMessage!,
+                          detalle: state.detalleError,
+                          esRed: state.esErrorDeRed,
                           onReintentar: () => ref
                               .read(retoGestionControllerProvider(widget.retoId)
                               .notifier)
@@ -119,11 +122,25 @@ class _EmpresaDetalleScreenState extends ConsumerState<EmpresaDetalleScreen>
                                     filtro: _filtroCandidatos,
                                     onFiltro: (f) => setState(
                                         () => _filtroCandidatos = f),
+                                    onReintentar: () => ref
+                                        .read(retoGestionControllerProvider(
+                                            widget.retoId)
+                                        .notifier)
+                                        .cargarCandidatos(),
                                   ),
                                   _PestanaParticipantes(
                                     participantes: state.participantes
                                         .where((p) => p.estado == 'aceptado')
                                         .toList(),
+                                    cargando: state.cargandoParticipantes,
+                                    error: state.errorParticipantes,
+                                    detalle: state.detalleParticipantes,
+                                    esRed: state.esRedParticipantes,
+                                    onReintentar: () => ref
+                                        .read(retoGestionControllerProvider(
+                                            widget.retoId)
+                                        .notifier)
+                                        .cargarParticipantes(),
                                   ),
                                   _PestanaEntregas(
                                     participantes: state.participantes
@@ -131,6 +148,15 @@ class _EmpresaDetalleScreenState extends ConsumerState<EmpresaDetalleScreen>
                                             p.estado == 'entregado' ||
                                             p.estado == 'completado')
                                         .toList(),
+                                    cargando: state.cargandoParticipantes,
+                                    error: state.errorParticipantes,
+                                    detalle: state.detalleParticipantes,
+                                    esRed: state.esRedParticipantes,
+                                    onReintentar: () => ref
+                                        .read(retoGestionControllerProvider(
+                                            widget.retoId)
+                                        .notifier)
+                                        .cargarParticipantes(),
                                   ),
                                 ],
                               ),
@@ -366,13 +392,28 @@ class _PestanaCandidatos extends ConsumerWidget {
     required this.state,
     required this.filtro,
     required this.onFiltro,
+    required this.onReintentar,
   });
   final RetoGestionState state;
   final String filtro;
   final ValueChanged<String> onFiltro;
+  final VoidCallback onReintentar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Sección independiente: su propio estado de carga y de error.
+    if (state.cargandoCandidatos) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.errorCandidatos != null) {
+      return _ErrorSeccion(
+        mensaje: state.errorCandidatos!,
+        detalle: state.detalleCandidatos,
+        esRed: state.esRedCandidatos,
+        onReintentar: onReintentar,
+      );
+    }
+
     final candidatos = switch (filtro) {
       'pendientes' =>
         state.candidatos.where((c) => c.estado == 'pendiente').toList(),
@@ -620,11 +661,34 @@ class _CandidatoCard extends ConsumerWidget {
 
 class _PestanaParticipantes extends StatelessWidget {
 
-  const _PestanaParticipantes({required this.participantes});
+  const _PestanaParticipantes({
+    required this.participantes,
+    required this.cargando,
+    required this.onReintentar,
+    this.error,
+    this.detalle,
+    this.esRed = false,
+  });
   final List<Participante> participantes;
+  final bool cargando;
+  final String? error;
+  final String? detalle;
+  final bool esRed;
+  final VoidCallback onReintentar;
 
   @override
   Widget build(BuildContext context) {
+    if (cargando) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (error != null) {
+      return _ErrorSeccion(
+        mensaje: error!,
+        detalle: detalle,
+        esRed: esRed,
+        onReintentar: onReintentar,
+      );
+    }
     if (participantes.isEmpty) {
       return const _CajaVacia(texto: 'Aún no has seleccionado a nadie.');
     }
@@ -753,11 +817,34 @@ class _ParticipanteCard extends StatelessWidget {
 
 class _PestanaEntregas extends ConsumerWidget {
 
-  const _PestanaEntregas({required this.participantes});
+  const _PestanaEntregas({
+    required this.participantes,
+    required this.cargando,
+    required this.onReintentar,
+    this.error,
+    this.detalle,
+    this.esRed = false,
+  });
   final List<Participante> participantes;
+  final bool cargando;
+  final String? error;
+  final String? detalle;
+  final bool esRed;
+  final VoidCallback onReintentar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (cargando) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (error != null) {
+      return _ErrorSeccion(
+        mensaje: error!,
+        detalle: detalle,
+        esRed: esRed,
+        onReintentar: onReintentar,
+      );
+    }
     final pendientes =
         participantes.where((p) => p.estado == 'entregado').toList();
     final aprobadas =
@@ -1192,15 +1279,21 @@ class _NoEncontrado extends StatelessWidget {
   }
 }
 
-/// Error al cargar el reto: muestra el motivo real y permite reintentar.
+/// Error de UNA sección del detalle (Candidatos, En curso, Entregas).
 ///
-/// Antes esta rama no existía en el `build` y cualquier fallo de carga
-/// (id inválido, sin permiso, reto borrado) mostraba "Este reto ya no
-/// existe.", que confundía a la empresa.
-class _ErrorBloque extends StatelessWidget {
-  const _ErrorBloque({required this.mensaje, required this.onReintentar});
+/// No deja la pantalla entera en error: solo la pestaña afectada lo muestra,
+/// con su propio "Reintentar". El detalle técnico solo sale en modo debug.
+class _ErrorSeccion extends StatelessWidget {
+  const _ErrorSeccion({
+    required this.mensaje,
+    required this.onReintentar,
+    this.detalle,
+    this.esRed = false,
+  });
 
   final String mensaje;
+  final String? detalle;
+  final bool esRed;
   final VoidCallback onReintentar;
 
   @override
@@ -1211,8 +1304,80 @@ class _ErrorBloque extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_outlined,
-                size: 56, color: AppColors.inkMuted),
+            Icon(
+              esRed ? Icons.cloud_off_outlined : Icons.error_outline_rounded,
+              size: 48,
+              color: AppColors.inkMuted,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              mensaje,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.navy900,
+              ),
+            ),
+            if (kDebugMode && detalle != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                detalle!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.inkMuted,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: onReintentar,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Error al cargar el reto: muestra el motivo real y permite reintentar.
+///
+/// Antes esta rama no existía en el `build` y cualquier fallo de carga
+/// (id inválido, sin permiso, reto borrado) mostraba "Este reto ya no
+/// existe.", que confundía a la empresa.
+class _ErrorBloque extends StatelessWidget {
+  const _ErrorBloque({
+    required this.mensaje,
+    required this.onReintentar,
+    this.detalle,
+    this.esRed = false,
+  });
+
+  final String mensaje;
+
+  /// Error real (excepción). Solo se muestra en modo debug.
+  final String? detalle;
+
+  /// True si el fallo es de conexión: solo ahí se usa el icono de nube tachada.
+  final bool esRed;
+
+  final VoidCallback onReintentar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              esRed ? Icons.cloud_off_outlined : Icons.error_outline_rounded,
+              size: 56,
+              color: AppColors.inkMuted,
+            ),
             const SizedBox(height: 16),
             Text(
               mensaje,
@@ -1223,6 +1388,18 @@ class _ErrorBloque extends StatelessWidget {
                 color: AppColors.navy900,
               ),
             ),
+            // El error real solo en debug: en release no se expone.
+            if (kDebugMode && detalle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                detalle!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.inkMuted,
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             OutlinedButton(
               onPressed: onReintentar,

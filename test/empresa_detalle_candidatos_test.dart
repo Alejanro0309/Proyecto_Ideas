@@ -20,6 +20,8 @@ class _ControladorFalso extends RetoGestionController {
   _ControladorFalso() : super(_RepoFalso(), 'r1') {
     state = RetoGestionState(
       isLoading: false,
+      cargandoCandidatos: false,
+      cargandoParticipantes: false,
       reto: RetoEditable(
         id: 'r1',
         titulo: 'Excel de finanzas',

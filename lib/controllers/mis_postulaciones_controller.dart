@@ -29,21 +29,32 @@ class MisPostulacionesState {
 }
 
 class MisPostulacionesController extends StateNotifier<MisPostulacionesState> {
-  MisPostulacionesController(this._repo)
+  MisPostulacionesController(this._repo, this._userId)
       : super(const MisPostulacionesState()) {
     cargar();
   }
 
   final RetosRepository _repo;
 
+  /// Usuario del que son los datos (ver `authUserIdProvider`).
+  final String? _userId;
+
   Future<void> cargar() async {
+    final userId = _userId;
+    if (userId == null) {
+      state = const MisPostulacionesState(isLoading: false);
+      return;
+    }
     state = state.copyWith(isLoading: true, limpiarError: true);
     try {
+      final postulaciones = await _repo.misPostulaciones();
+      if (userId != _userId) return; // Respuesta tardía de otra cuenta.
       state = state.copyWith(
-        postulaciones: await _repo.misPostulaciones(),
+        postulaciones: postulaciones,
         isLoading: false,
       );
     } catch (_) {
+      if (userId != _userId) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'No pudimos cargar tus postulaciones.',
@@ -52,7 +63,16 @@ class MisPostulacionesController extends StateNotifier<MisPostulacionesState> {
   }
 }
 
+/// `autoDispose` + depende de `authUserIdProvider`: al cambiar de cuenta se
+/// recrea y carga las postulaciones del usuario nuevo.
 final misPostulacionesControllerProvider =
-    StateNotifierProvider<MisPostulacionesController, MisPostulacionesState>(
-  (ref) => MisPostulacionesController(ref.watch(retosRepositoryProvider)),
+    StateNotifierProvider.autoDispose<
+        MisPostulacionesController, MisPostulacionesState>(
+  (ref) {
+    final userId = ref.watch(authUserIdProvider);
+    return MisPostulacionesController(
+      ref.watch(retosRepositoryProvider),
+      userId,
+    );
+  },
 );

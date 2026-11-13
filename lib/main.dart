@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart' as rumbo;
 import 'config/router/app_router.dart';
 import 'config/app_constants.dart';
+import 'controllers/auth_session_sync.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,26 +99,29 @@ class UnimetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: rumbo.buildRumboTheme(),
-      darkTheme: rumbo.buildRumboTheme(),
-      themeMode:
-          ThemeMode.light, // Modo claro por defecto para consistencia visual
-      // Localizaciones en español: sin esto, `showDatePicker(locale: 'es')`
-      // lanza "No MaterialLocalizations found" y rompe la pantalla en web.
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('es'),
-        Locale('en'),
-      ],
-      locale: const Locale('es'),
-      routerConfig: appRouter,
+    // Limpia los datos del usuario anterior al cambiar de cuenta.
+    return AuthSessionSync(
+      child: MaterialApp.router(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: rumbo.buildRumboTheme(),
+        darkTheme: rumbo.buildRumboTheme(),
+        themeMode:
+            ThemeMode.light, // Modo claro por defecto para consistencia visual
+        // Localizaciones en español: sin esto, `showDatePicker(locale: 'es')`
+        // lanza "No MaterialLocalizations found" y rompe la pantalla en web.
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es'),
+          Locale('en'),
+        ],
+        locale: const Locale('es'),
+        routerConfig: appRouter,
+      ),
     );
   }
 }

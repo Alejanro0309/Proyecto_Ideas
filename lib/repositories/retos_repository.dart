@@ -365,15 +365,23 @@ class RetosRepository {
       _rpc('eliminar_reto', {'p_reto_id': retoId});
 
   Future<List<Candidato>> candidatosReto(String retoId) async {
-    final data =
-        await _client.rpc('candidatos_reto', params: {'p_reto_id': retoId});
-    return _mapearFilas(data, Candidato.fromJson);
+    try {
+      final data =
+          await _client.rpc('candidatos_reto', params: {'p_reto_id': retoId});
+      return _mapearFilas(data, Candidato.fromJson);
+    } on PostgrestException catch (e) {
+      _lanzar(e);
+    }
   }
 
   Future<List<Participante>> participantesReto(String retoId) async {
-    final data =
-        await _client.rpc('participantes_reto', params: {'p_reto_id': retoId});
-    return _mapearFilas(data, Participante.fromJson);
+    try {
+      final data =
+          await _client.rpc('participantes_reto', params: {'p_reto_id': retoId});
+      return _mapearFilas(data, Participante.fromJson);
+    } on PostgrestException catch (e) {
+      _lanzar(e);
+    }
   }
 
   Future<void> seleccionarCandidato(String postulacionId) =>

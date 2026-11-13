@@ -18,7 +18,7 @@ class _RepoFalso implements RetosRepository {
 /// tarjeta resaltada con borde naranja) para comprobar que ninguna tarjeta
 /// desborda a distintos anchos y escalas de texto.
 class _ControladorConDatos extends EmpresaRetosController {
-  _ControladorConDatos() : super(_RepoFalso()) {
+  _ControladorConDatos() : super(_RepoFalso(), "u1") {
     state = EmpresaState(
       isLoading: false,
       retos: List.generate(

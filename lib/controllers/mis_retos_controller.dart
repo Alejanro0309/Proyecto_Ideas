@@ -44,17 +44,28 @@ class MisRetosState {
 }
 
 class MisRetosController extends StateNotifier<MisRetosState> {
-  MisRetosController(this._repo) : super(const MisRetosState()) {
+  MisRetosController(this._repo, this._userId) : super(const MisRetosState()) {
     cargar();
   }
 
   final RetosRepository _repo;
 
+  /// Usuario del que son los datos (ver `authUserIdProvider`).
+  final String? _userId;
+
   Future<void> cargar() async {
+    final userId = _userId;
+    if (userId == null) {
+      state = const MisRetosState(isLoading: false);
+      return;
+    }
     state = state.copyWith(isLoading: true, limpiarError: true);
     try {
-      state = state.copyWith(retos: await _repo.misRetos(), isLoading: false);
+      final retos = await _repo.misRetos();
+      if (userId != _userId) return; // Respuesta tardía de otra cuenta.
+      state = state.copyWith(retos: retos, isLoading: false);
     } catch (_) {
+      if (userId != _userId) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'No pudimos cargar tus retos.',
@@ -106,7 +117,12 @@ class MisRetosController extends StateNotifier<MisRetosState> {
       ]);
 }
 
+/// `autoDispose` + depende de `authUserIdProvider`: al cambiar de cuenta se
+/// recrea y carga los retos del usuario nuevo.
 final misRetosControllerProvider =
-    StateNotifierProvider<MisRetosController, MisRetosState>(
-  (ref) => MisRetosController(ref.watch(retosRepositoryProvider)),
+    StateNotifierProvider.autoDispose<MisRetosController, MisRetosState>(
+  (ref) {
+    final userId = ref.watch(authUserIdProvider);
+    return MisRetosController(ref.watch(retosRepositoryProvider), userId);
+  },
 );
