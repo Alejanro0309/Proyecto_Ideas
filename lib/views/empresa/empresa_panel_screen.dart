@@ -13,6 +13,7 @@ import '../../../utils/fecha_es.dart';
 import '../widgets/rumbo_button.dart';
 import '../widgets/rumbo_card.dart';
 import '../widgets/section_header.dart';
+import '../../core/realtime/realtime_sync.dart';
 
 /// Panel de empresa: `/empresa`.
 ///
@@ -22,6 +23,12 @@ class EmpresaPanelScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    escucharRealtime(ref, (e) {
+      if (esEventoDeRetos(e)) {
+        ref.read(empresaRetosControllerProvider.notifier)
+            .cargar(silenciosa: true);
+      }
+    });
     final state = ref.watch(empresaRetosControllerProvider);
     final contadores = state.contadores;
     final width = MediaQuery.sizeOf(context).width;
@@ -569,7 +576,7 @@ class _RetoResumen extends StatelessWidget {
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _BadgeEstado(estado: _estadoMostrado(reto)),
+              _BadgeEstado(reto: reto),
               if (reto.candidatosPendientes > 0)
                 Text(
                   '${reto.candidatosPendientes} nuevos',
@@ -708,20 +715,35 @@ class _BudgetBadge extends StatelessWidget {
 
 class _BadgeEstado extends StatelessWidget {
 
-  const _BadgeEstado({required this.estado});
-  final String estado;
+  const _BadgeEstado({required this.reto});
+  final RetoEmpresa reto;
 
   @override
   Widget build(BuildContext context) {
-    final (fondo, texto, label) = switch (estado) {
-      'borrador' => (const Color(0xFFE5E5E5), AppColors.inkMuted, 'Borrador'),
-      'publicado' => (
+    final (fondo, texto, label) = switch (reto.estadoVisible) {
+      EstadoVisibleReto.borrador => (
+          const Color(0xFFE5E5E5),
+          AppColors.inkMuted,
+          'Borrador'
+        ),
+      EstadoVisibleReto.publicado => (
           const Color(0xFFDCFCE7),
           const Color(0xFF15803D),
           'Publicado'
         ),
-      'en_curso' => (AppColors.yellowSoft, AppColors.amberText, 'En curso'),
-      _ => (const Color(0xFF404040), Colors.white, 'Cerrado'),
+      EstadoVisibleReto.enCurso => (
+          AppColors.yellowSoft,
+          AppColors.amberText,
+          'En curso'
+        ),
+      // Con completados: verde "Completado". Sin ellos: gris "Cerrado".
+      EstadoVisibleReto.cerrado => reto.esCompletado
+          ? (
+              const Color(0xFFDCFCE7),
+              const Color(0xFF15803D),
+              'Completado'
+            )
+          : (const Color(0xFF404040), Colors.white, 'Cerrado'),
     };
 
     return Container(
@@ -734,11 +756,11 @@ class _BadgeEstado extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            estado == 'publicado'
+            reto.estadoVisible == EstadoVisibleReto.publicado
                 ? Icons.check_circle
-                : estado == 'en_curso'
+                : reto.estadoVisible == EstadoVisibleReto.enCurso
                     ? Icons.play_circle_outline
-                    : estado == 'borrador'
+                    : reto.estadoVisible == EstadoVisibleReto.borrador
                         ? Icons.edit_note
                         : Icons.lock_outline,
             size: 12,
@@ -757,13 +779,6 @@ class _BadgeEstado extends StatelessWidget {
       ),
     );
   }
-}
-
-String _estadoMostrado(RetoEmpresa r) {
-  if (r.estado == 'borrador') return 'borrador';
-  if (r.estado == 'cerrado' || r.estado == 'completado') return 'cerrado';
-  if (r.cuposCompletos) return 'en_curso';
-  return 'publicado';
 }
 
 class _CajaVacia extends StatelessWidget {

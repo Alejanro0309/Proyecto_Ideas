@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../views/data/sample_data.dart';
 import 'empresa_retos_controller.dart';
+import 'mi_curriculo_controller.dart';
 import 'mis_postulaciones_controller.dart';
 import 'mis_retos_controller.dart';
 import 'providers.dart';
@@ -26,8 +27,7 @@ final List<ProviderOrFamily> providersPorSesion = <ProviderOrFamily>[
   retosRecomendadosProvider,
   retosActivosProvider,
   notificacionesProvider,
-  logrosProvider,
-  qrCodeUrlProvider,
+  miCurriculoControllerProvider,
 ];
 
 /// Escucha `onAuthStateChange` en un solo lugar.

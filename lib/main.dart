@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart' as rumbo;
 import 'config/router/app_router.dart';
 import 'config/app_constants.dart';
 import 'controllers/auth_session_sync.dart';
+import 'views/widgets/realtime_snackbars.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,6 +122,9 @@ class UnimetApp extends StatelessWidget {
         ],
         locale: const Locale('es'),
         routerConfig: appRouter,
+        // Avisos de Realtime (SnackBar con acción "Ver") en toda la app.
+        builder: (context, child) =>
+            RealtimeSnackbars(child: child ?? const SizedBox.shrink()),
       ),
     );
   }

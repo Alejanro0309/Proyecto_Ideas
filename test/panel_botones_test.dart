@@ -41,7 +41,7 @@ class _ControladorConDatos extends EmpresaRetosController {
   }
 
   @override
-  Future<void> cargar() async {}
+  Future<void> cargar({bool silenciosa = false}) async {}
 }
 
 /// Ancho intrínseco real del texto con SU estilo y la escala de texto.

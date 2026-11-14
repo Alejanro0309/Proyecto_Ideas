@@ -50,7 +50,7 @@ void main() {
 
     // Pago y duración están en la misma fila (alineados).
     expect(find.text('Duración'), findsOneWidget);
-    expect(find.text('Pago'), findsOneWidget);
+    expect(find.text('Presupuesto'), findsOneWidget);
   });
 
   testWidgets('Las habilidades elegidas se muestran como chips',

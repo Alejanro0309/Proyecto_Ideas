@@ -69,7 +69,7 @@ class _ControladorFalso extends RetoGestionController {
   }
 
   @override
-  Future<void> cargar() async {}
+  Future<void> cargar({bool silenciosa = false}) async {}
 
   @override
   Future<String?> seleccionar(String postulacionId, String nombre) async => null;

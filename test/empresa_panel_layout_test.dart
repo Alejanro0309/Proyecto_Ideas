@@ -43,7 +43,7 @@ class _ControladorConDatos extends EmpresaRetosController {
   }
 
   @override
-  Future<void> cargar() async {}
+  Future<void> cargar({bool silenciosa = false}) async {}
 
   @override
   Future<String?> cerrar(String retoId) async => null;

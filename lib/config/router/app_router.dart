@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../views/carnet_scan_screen.dart';
 import '../../views/curriculum/curriculum_screen.dart';
+import '../../views/cv/cv_publico_screen.dart';
+import '../../views/escanear_qr_screen.dart';
+import '../../views/cv/verificar_logro_screen.dart';
 import '../../views/screens/landing_screen.dart';
 import '../../views/empresa/empresa_detalle_screen.dart';
-import '../../views/empresa/empresa_escanear_screen.dart';
 import '../../views/empresa/empresa_form_screen.dart';
 import '../../views/empresa/empresa_shell_screen.dart';
 import '../../views/empresa/empresa_perfil_screen.dart';
@@ -48,6 +50,13 @@ abstract class AppRoutes {
   static const String empresaRetoNuevo = '/empresa/retos/nuevo';
   static const String empresaEscanear = '/empresa/escanear';
   static const String empresaPerfil = '/empresa/perfil';
+
+  // Rutas PÚBLICAS (sin sesión y sin barra de navegación)
+  static const String cvPublico = '/cv';
+  static const String verificarLogro = '/verificar';
+
+  // Escáner de QR del currículum (estudiante)
+  static const String escanearQr = '/escanear';
 }
 
 /// Rol de la sesión actual, cacheado para el `redirect` del router.
@@ -63,6 +72,17 @@ final GoRouter appRouter = GoRouter(
   debugLogDiagnostics: false,
   redirect: (context, state) {
     final ubicacion = state.uri.toString();
+
+    // Rutas públicas: el currículum con QR y la verificación de logros se
+    // abren SIN sesión y fuera de cualquier layout con barra. Quien escanea
+    // con la cámara del teléfono NO debe ser enviado al login.
+    if (ubicacion.startsWith('${AppRoutes.cvPublico}/') ||
+        ubicacion.startsWith('${AppRoutes.verificarLogro}/') ||
+        ubicacion == AppRoutes.cvPublico ||
+        ubicacion == AppRoutes.verificarLogro) {
+      return null;
+    }
+
     if (rolCacheado == 'empresa' &&
         (ubicacion == '/panel' ||
             ubicacion.startsWith('/retos') ||
@@ -169,6 +189,11 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
     GoRoute(
+      path: AppRoutes.escanearQr,
+      builder: (context, state) =>
+          const RetosLayout(child: EscanearQrScreen()),
+    ),
+    GoRoute(
       path: AppRoutes.scanner,
       builder: (context, state) => const CarnetScanScreen(),
     ),
@@ -182,6 +207,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.profile,
       builder: (context, state) => const RetosLayout(child: ProfileScreen()),
+    ),
+    // ── PÚBLICAS: fuera de los layouts con barra de navegación ──────
+    // Se abren sin sesión (quien escanea el QR con la cámara del teléfono).
+    // Refrescar (F5) en /#/cv/<token> funciona porque la ruta es estática.
+    GoRoute(
+      path: '${AppRoutes.cvPublico}/:token',
+      builder: (context, state) => CvPublicoScreen(
+        token: state.pathParameters['token'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '${AppRoutes.verificarLogro}/:codigo',
+      builder: (context, state) => VerificarLogroScreen(
+        codigo: state.pathParameters['codigo'] ?? '',
+      ),
     ),
   ],
 );

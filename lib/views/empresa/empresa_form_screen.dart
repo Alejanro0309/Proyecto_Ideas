@@ -10,6 +10,7 @@ import '../../../models/reto.dart';
 import '../../../models/reto_empresa.dart';
 import '../../../utils/fecha_es.dart';
 import '../widgets/rumbo_card.dart';
+import '../../core/utils/comision.dart';
 
 /// Crear o editar un reto: `/empresa/retos/nuevo` y `/empresa/retos/:id/editar`.
 class EmpresaFormScreen extends ConsumerStatefulWidget {
@@ -301,20 +302,40 @@ class _EmpresaFormScreenState extends ConsumerState<EmpresaFormScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: TextFormField(
-                  controller: _pagoCtrl,
-                  enabled: !_modoBloqueado,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Pago',
-                    prefixText: 'US\$ ',
-                  ),
-                  validator: (v) {
-                    final n = int.tryParse(v ?? '');
-                    if (n == null || n < 1)
-                      return 'Escribe un pago válido en USD.';
-                    return null;
-                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _pagoCtrl,
+                      enabled: !_modoBloqueado,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Presupuesto',
+                        prefixText: 'US\$ ',
+                        helperText: 'Lo que paga la empresa',
+                      ),
+                      onChanged: _modoBloqueado
+                          ? null
+                          : (_) => setState(() {}),
+                      validator: (v) {
+                        final n = int.tryParse(v ?? '');
+                        if (n == null || n < 1)
+                          return 'Escribe un pago válido en USD.';
+                        return null;
+                      },
+                    ),
+                    if (_desglosePago().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          _desglosePago(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.inkMuted,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -523,6 +544,18 @@ class _EmpresaFormScreenState extends ConsumerState<EmpresaFormScreen> {
         ],
       ),
     );
+  }
+
+  /// Desglose junto al campo de presupuesto: se actualiza al escribir.
+  ///
+  /// Presupuesto (lo que paga la empresa) → lo que recibe el estudiante →
+  /// comisión de RUMBO. Se calcula en centavos enteros.
+  String _desglosePago() {
+    final bruto = int.tryParse(_pagoCtrl.text) ?? 0;
+    if (bruto < 1) return '';
+    return 'Presupuesto: ${formatoUsd(bruto * 100)} · '
+        'El estudiante recibe: ${netoFormateado(bruto)} · '
+        'Comisión RUMBO ($kComisionPorcentaje %): ${comisionFormateada(bruto)}';
   }
 
   Future<void> _elegirFecha() async {

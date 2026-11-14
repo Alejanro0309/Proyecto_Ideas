@@ -55,7 +55,7 @@ void main() {
     );
 
     // La pantalla debe mostrar algo: filtro "Todos", o datos, o un estado.
-    final textoVisible = find.text('Todos').evaluate().isNotEmpty ||
+    final textoVisible = find.textContaining('Todos').evaluate().isNotEmpty ||
         find.text('Mis retos').evaluate().isNotEmpty;
     expect(
       textoVisible,

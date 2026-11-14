@@ -5,6 +5,7 @@ import '../../../models/reto.dart';
 import '../../../utils/fecha_es.dart';
 import 'rumbo_card.dart';
 import 'rumbo_chips.dart';
+import '../../../core/utils/comision.dart';
 
 /// Tarjeta de reto compartida por landing, panel y explorar.
 ///
@@ -118,7 +119,7 @@ class RetoCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                BudgetBadge(reto.presupuestoLabel),
+                BudgetBadge(netoFormateado(reto.presupuestoUsd)),
                 const SizedBox(width: 8),
                 const Icon(Icons.event, size: 16, color: AppColors.inkMuted),
                 const SizedBox(width: 6),

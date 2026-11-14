@@ -141,24 +141,36 @@ class RetoGestionController extends StateNotifier<RetoGestionState> {
   final RetosRepository _repo;
   final String _retoId;
 
+  /// Cuando la pantalla se cierra, el provider se desecha y este controlador
+  /// deja de existir. Las respuestas tardías de `cargar*` deben descartarse.
+  bool _dispuesto = false;
+
+  @override
+  void dispose() {
+    _dispuesto = true;
+    super.dispose();
+  }
+
   /// Carga las tres secciones en paralelo pero con estado INDEPENDIENTE:
   /// si fallan los candidatos, el Resumen se sigue viendo y solo esa pestaña
   /// muestra su error con su "Reintentar".
-  Future<void> cargar() async {
+  Future<void> cargar({bool silenciosa = false}) async {
     await Future.wait([
-      cargarResumen(),
-      cargarCandidatos(),
-      cargarParticipantes(),
+      cargarResumen(silenciosa: silenciosa),
+      cargarCandidatos(silenciosa: silenciosa),
+      cargarParticipantes(silenciosa: silenciosa),
     ]);
   }
 
-  Future<void> cargarResumen() async {
-    state = state.copyWith(isLoading: true, limpiarError: true);
+  Future<void> cargarResumen({bool silenciosa = false}) async {
+    state = state.copyWith(isLoading: !silenciosa, limpiarError: true);
     try {
       final reto = await _repo.detalleRetoEmpresa(_retoId);
+      if (_dispuesto) return;
       state = state.copyWith(reto: reto, isLoading: false);
     } catch (e, st) {
       debugPrint('[reto-gestion] resumen FALLÓ: $e\n$st');
+      if (_dispuesto) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: _mapearErrorCarga(e),
@@ -168,16 +180,18 @@ class RetoGestionController extends StateNotifier<RetoGestionState> {
     }
   }
 
-  Future<void> cargarCandidatos() async {
-    state = state.copyWith(cargandoCandidatos: true, limpiarCandidatos: true);
+  Future<void> cargarCandidatos({bool silenciosa = false}) async {
+    state = state.copyWith(cargandoCandidatos: !silenciosa, limpiarCandidatos: true);
     try {
       final candidatos = await _repo.candidatosReto(_retoId);
+      if (_dispuesto) return;
       state = state.copyWith(
         candidatos: candidatos,
         cargandoCandidatos: false,
       );
     } catch (e, st) {
       debugPrint('[reto-gestion] candidatos FALLÓ: $e\n$st');
+      if (_dispuesto) return;
       state = state.copyWith(
         cargandoCandidatos: false,
         errorCandidatos: 'No pudimos cargar los candidatos. Intenta de nuevo.',
@@ -187,19 +201,21 @@ class RetoGestionController extends StateNotifier<RetoGestionState> {
     }
   }
 
-  Future<void> cargarParticipantes() async {
+  Future<void> cargarParticipantes({bool silenciosa = false}) async {
     state = state.copyWith(
-      cargandoParticipantes: true,
+      cargandoParticipantes: !silenciosa,
       limpiarParticipantes: true,
     );
     try {
       final participantes = await _repo.participantesReto(_retoId);
+      if (_dispuesto) return;
       state = state.copyWith(
         participantes: participantes,
         cargandoParticipantes: false,
       );
     } catch (e, st) {
       debugPrint('[reto-gestion] participantes FALLÓ: $e\n$st');
+      if (_dispuesto) return;
       state = state.copyWith(
         cargandoParticipantes: false,
         errorParticipantes:

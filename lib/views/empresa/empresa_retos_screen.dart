@@ -10,6 +10,7 @@ import '../../../utils/fecha_es.dart';
 import '../widgets/rumbo_button.dart';
 import '../widgets/rumbo_card.dart';
 import '../widgets/rumbo_chips.dart';
+import '../../core/realtime/realtime_sync.dart';
 
 /// Mis retos de la empresa: `/empresa/retos`.
 class EmpresaRetosScreen extends ConsumerStatefulWidget {
@@ -46,6 +47,12 @@ class _EmpresaRetosScreenState extends ConsumerState<EmpresaRetosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    escucharRealtime(ref, (e) {
+      if (esEventoDeRetos(e)) {
+        ref.read(empresaRetosControllerProvider.notifier)
+            .cargar(silenciosa: true);
+      }
+    });
     final state = ref.watch(empresaRetosControllerProvider);
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= 900;
@@ -83,10 +90,13 @@ class _EmpresaRetosScreenState extends ConsumerState<EmpresaRetosScreen> {
                     const SizedBox(height: 16),
                     Wrap(
                       spacing: 8,
+                      runSpacing: 8,
                       children: [
                         for (final f in _filtros)
                           FilterChip(
-                            label: Text(_etiquetaFiltro(f)),
+                            // Cada chip dice cuántos retos hay en ese estado.
+                            label: Text(
+                                '${_etiquetaFiltro(f)} ${_conteo(f, state.retos)}'),
                             selected: _filtro == f,
                             onSelected: (_) => setState(() => _filtro = f),
                             selectedColor: AppColors.yellowSoft,
@@ -147,19 +157,22 @@ class _EmpresaRetosScreenState extends ConsumerState<EmpresaRetosScreen> {
     );
   }
 
-  List<RetoEmpresa> _filtrar(List<RetoEmpresa> retos) => switch (_filtro) {
-        'borrador' => retos.where((r) => r.estado == 'borrador').toList(),
-        'publicado' => retos
-            .where((r) => r.estado == 'publicado' && !r.cuposCompletos)
-            .toList(),
-        'en_curso' => retos
-            .where((r) => r.estado == 'publicado' && r.cuposCompletos)
-            .toList(),
-        'cerrado' => retos
-            .where((r) => r.estado == 'cerrado' || r.estado == 'completado')
-            .toList(),
-        _ => retos,
+  /// ¿El reto pertenece a ese filtro? Usa SIEMPRE `estadoVisible`, la única
+  /// definición de estado de la app.
+  bool _cumple(RetoEmpresa r, String filtro) => switch (filtro) {
+        'borrador' => r.estadoVisible == EstadoVisibleReto.borrador,
+        'publicado' => r.estadoVisible == EstadoVisibleReto.publicado,
+        'en_curso' => r.estadoVisible == EstadoVisibleReto.enCurso,
+        'cerrado' => r.estadoVisible == EstadoVisibleReto.cerrado,
+        _ => true,
       };
+
+  /// Cuántos retos hay en cada filtro (para los chips).
+  int _conteo(String filtro, List<RetoEmpresa> retos) =>
+      retos.where((r) => _cumple(r, filtro)).length;
+
+  List<RetoEmpresa> _filtrar(List<RetoEmpresa> retos) =>
+      retos.where((r) => _cumple(r, _filtro)).toList();
 
   static String _etiquetaFiltro(String f) => switch (f) {
         'borrador' => 'Borrador',
@@ -177,7 +190,6 @@ class _RetoEmpresaCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(empresaRetosControllerProvider.notifier);
-    final estado = _estadoMostrado(reto);
 
     return RumboCard(
       padding: const EdgeInsets.all(20),
@@ -195,24 +207,8 @@ class _RetoEmpresaCard extends ConsumerWidget {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _BadgeEstado(estado: estado),
-                    if (reto.candidatosPendientes > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.orange.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '${reto.candidatosPendientes} candidatos nuevos',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.orange,
-                          ),
-                        ),
-                      ),
+                    _BadgeEstado(reto: reto),
+                    ..._avisosReto(reto),
                   ],
                 ),
               ),
@@ -276,7 +272,10 @@ class _RetoEmpresaCard extends ConsumerWidget {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              BudgetBadge('US\$${reto.presupuestoUsd}'),
+              BudgetBadge(
+                'US\$${reto.presupuestoUsd}',
+                etiqueta: 'Presupuesto',
+              ),
               Text(
                 'Cupos ${reto.cuposOcupados}/${reto.cupos}',
                 style: const TextStyle(fontSize: 13, color: AppColors.navy900),
@@ -362,6 +361,37 @@ class _RetoEmpresaCard extends ConsumerWidget {
         );
     }
   }
+
+  /// Chips de situación del reto. Solo miran los contadores reales, nunca
+  /// `cuposCompletos`.
+  List<Widget> _avisosReto(RetoEmpresa r) {
+    final chips = <Widget>[];
+
+    // Un Cerrado con candidatos pendientes NO se oculta: se avisa.
+    if (r.candidatosPendientes > 0) {
+      chips.add(_ChipInfo(
+        texto: '${r.candidatosPendientes} candidatos '
+            '${r.estadoVisible == EstadoVisibleReto.cerrado ? 'pendientes' : 'nuevos'}',
+        fondo: AppColors.orange.withValues(alpha: 0.12),
+        color: AppColors.orange,
+      ));
+    }
+    if (r.estadoVisible == EstadoVisibleReto.enCurso && r.enRevision > 0) {
+      chips.add(_ChipInfo(
+        texto: '${r.enRevision} entregas por revisar',
+        fondo: AppColors.yellowSoft,
+        color: AppColors.amberText,
+      ));
+    }
+    if (r.completados > 0) {
+      chips.add(_ChipInfo(
+        texto: '${r.completados} completados',
+        fondo: const Color(0xFFDCFCE7),
+        color: const Color(0xFF15803D),
+      ));
+    }
+    return chips;
+  }
 }
 
 extension on RetoEmpresa {
@@ -372,28 +402,36 @@ extension on RetoEmpresa {
       completados > 0;
 }
 
-String _estadoMostrado(RetoEmpresa r) {
-  if (r.estado == 'borrador') return 'borrador';
-  if (r.estado == 'cerrado' || r.estado == 'completado') return 'cerrado';
-  if (r.cuposCompletos) return 'en_curso';
-  return 'publicado';
-}
-
 class _BadgeEstado extends StatelessWidget {
-  const _BadgeEstado({required this.estado});
-  final String estado;
+  const _BadgeEstado({required this.reto});
+  final RetoEmpresa reto;
 
   @override
   Widget build(BuildContext context) {
-    final (fondo, texto, label) = switch (estado) {
-      'borrador' => (const Color(0xFFE5E5E5), AppColors.inkMuted, 'Borrador'),
-      'publicado' => (
+    final (fondo, texto, label) = switch (reto.estadoVisible) {
+      EstadoVisibleReto.borrador => (
+          const Color(0xFFE5E5E5),
+          AppColors.inkMuted,
+          'Borrador'
+        ),
+      EstadoVisibleReto.publicado => (
           const Color(0xFFDCFCE7),
           const Color(0xFF15803D),
           'Publicado'
         ),
-      'en_curso' => (AppColors.yellowSoft, AppColors.amberText, 'En curso'),
-      _ => (const Color(0xFF404040), Colors.white, 'Cerrado'),
+      EstadoVisibleReto.enCurso => (
+          AppColors.yellowSoft,
+          AppColors.amberText,
+          'En curso'
+        ),
+      // Con completados: verde "Completado". Sin ellos: gris "Cerrado".
+      EstadoVisibleReto.cerrado => reto.esCompletado
+          ? (
+              const Color(0xFFDCFCE7),
+              const Color(0xFF15803D),
+              'Completado'
+            )
+          : (const Color(0xFF404040), Colors.white, 'Cerrado'),
     };
 
     return Container(
@@ -408,6 +446,37 @@ class _BadgeEstado extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: texto,
+        ),
+      ),
+    );
+  }
+}
+
+class _ChipInfo extends StatelessWidget {
+  const _ChipInfo({
+    required this.texto,
+    required this.fondo,
+    required this.color,
+  });
+
+  final String texto;
+  final Color fondo;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: fondo,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
         ),
       ),
     );

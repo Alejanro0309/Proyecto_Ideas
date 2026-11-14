@@ -6,6 +6,9 @@ import '../repositories/retos_repository.dart';
 import 'providers.dart';
 
 /// Contador para la barra: candidatos por revisar + entregas por revisar.
+///
+/// Las definiciones son las mismas en el Panel, en "Mis retos", en los filtros
+/// y en la barra: salen todas de `RetoEmpresa.estadoVisible`.
 class EmpresaContadores {
 
   const EmpresaContadores({
@@ -13,11 +16,21 @@ class EmpresaContadores {
     this.candidatosPorRevisar = 0,
     this.entregasPorRevisar = 0,
     this.completados = 0,
+    this.todos = 0,
+    this.enCurso = 0,
+    this.cerrado = 0,
+    this.borrador = 0,
   });
   final int publicados;
   final int candidatosPorRevisar;
   final int entregasPorRevisar;
   final int completados;
+
+  /// Cuántos retos hay en cada filtro de "Mis retos".
+  final int todos;
+  final int enCurso;
+  final int cerrado;
+  final int borrador;
 }
 
 class EmpresaState {
@@ -35,13 +48,34 @@ class EmpresaState {
   /// Error real (excepción) para modo debug. Nunca se muestra en release.
   final String? detalleError;
 
-  EmpresaContadores get contadores => EmpresaContadores(
-        publicados: retos.where((r) => r.estado == 'publicado').length,
-        candidatosPorRevisar:
-            retos.fold(0, (s, r) => s + r.candidatosPendientes),
-        entregasPorRevisar: retos.fold(0, (s, r) => s + r.enRevision),
-        completados: retos.fold(0, (s, r) => s + r.completados),
-      );
+  EmpresaContadores get contadores {
+    final enCurso = retos
+        .where((r) => r.estadoVisible == EstadoVisibleReto.enCurso)
+        .length;
+    return EmpresaContadores(
+      // "Retos publicados" = retos en Publicado + En curso.
+      publicados: retos
+              .where((r) =>
+                  r.estadoVisible == EstadoVisibleReto.publicado ||
+                  r.estadoVisible == EstadoVisibleReto.enCurso)
+              .length,
+      // Solo de retos que NO están Cerrados.
+      candidatosPorRevisar: retos
+          .where((r) => r.estadoVisible != EstadoVisibleReto.cerrado)
+          .fold(0, (s, r) => s + r.candidatosPendientes),
+      entregasPorRevisar: retos.fold(0, (s, r) => s + r.enRevision),
+      // Retos con badge "Completado".
+      completados: retos.where((r) => r.esCompletado).length,
+      todos: retos.length,
+      enCurso: enCurso,
+      cerrado: retos
+          .where((r) => r.estadoVisible == EstadoVisibleReto.cerrado)
+          .length,
+      borrador: retos
+          .where((r) => r.estadoVisible == EstadoVisibleReto.borrador)
+          .length,
+    );
+  }
 
   EmpresaState copyWith({
     List<RetoEmpresa>? retos,
@@ -69,20 +103,33 @@ class EmpresaRetosController extends StateNotifier<EmpresaState> {
   /// controlador deja de existir: sirve para descartar respuestas tardías.
   final String? _userId;
 
-  Future<void> cargar() async {
+  /// Si la pantalla ya no está, las respuestas tardías no deben tocar estado.
+  bool _dispuesto = false;
+
+  @override
+  void dispose() {
+    _dispuesto = true;
+    super.dispose();
+  }
+
+  Future<void> cargar({bool silenciosa = false}) async {
     final userId = _userId;
     if (userId == null) {
       // Sin sesión no hay nada que cargar: nunca dejar la lista del anterior.
       state = const EmpresaState(isLoading: false);
       return;
     }
-    state = state.copyWith(isLoading: true, limpiarError: true);
+    // Una recarga silenciosa (Realtime) no muestra el esqueleto: la pantalla
+    // sigue mostrando lo que tiene y no pierde el scroll ni el filtro.
+    state = state.copyWith(isLoading: !silenciosa, limpiarError: true);
     try {
       final retos = await _repo.misRetosEmpresa();
+      if (_dispuesto) return;
       if (userId != _userId) return; // Respuesta tardía de otra cuenta.
       state = state.copyWith(retos: retos, isLoading: false);
     } catch (e, st) {
       debugPrint('[empresa-retos] cargar FALLÓ: $e\n$st');
+      if (_dispuesto) return;
       if (userId != _userId) return;
       state = state.copyWith(
         isLoading: false,

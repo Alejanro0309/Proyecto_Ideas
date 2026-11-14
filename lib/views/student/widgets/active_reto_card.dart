@@ -8,6 +8,7 @@ import '../../widgets/rumbo_button.dart';
 import '../../widgets/rumbo_card.dart';
 import '../../widgets/rumbo_chips.dart';
 import '../../widgets/section_header.dart' show AnimatedProgressBar;
+import '../../../core/utils/comision.dart';
 
 /// Variante de la tarjeta de reto para los retos activos y completados.
 ///
@@ -147,7 +148,10 @@ class ActiveRetoCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              BudgetBadge('US\$${activo.presupuestoUsd}'),
+              BudgetBadge(
+                netoFormateado(activo.presupuestoUsd),
+                etiqueta: 'Pago para ti',
+              ),
               const Spacer(),
               OutlinedButton(
                 onPressed: onTap,

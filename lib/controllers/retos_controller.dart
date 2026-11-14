@@ -4,6 +4,7 @@ import '../models/reto.dart';
 import '../models/reto_filtros.dart';
 import '../repositories/retos_repository.dart';
 import 'providers.dart';
+import '../core/utils/comision.dart';
 
 /// Estado de la pantalla "Explorar retos".
 class RetosState {
@@ -114,11 +115,13 @@ class RetosController extends StateNotifier<RetosState> {
     await _buscar(reiniciar: true);
   }
 
-  Future<void> _buscar({required bool reiniciar}) async {
+  Future<void> _buscar({required bool reiniciar, bool silenciosa = false}) async {
     final id = ++_requestId;
     final offset = reiniciar ? 0 : state.retos.length;
+    // Una recarga silenciosa (Realtime) no muestra el esqueleto: no se pierde
+    // el scroll ni el filtro elegido.
     state = reiniciar
-        ? state.copyWith(isLoading: true, limpiarError: true)
+        ? state.copyWith(isLoading: !silenciosa, limpiarError: true)
         : state.copyWith(isLoadingMore: true);
     try {
       final page = await _repo.buscarRetos(
@@ -146,6 +149,10 @@ class RetosController extends StateNotifier<RetosState> {
       );
     }
   }
+
+  /// Recarga silenciosa (Realtime): vuelve a llamar a `buscar_retos` sin tocar
+  /// los filtros ni el scroll.
+  Future<void> recargar() => _buscar(reiniciar: true, silenciosa: true);
 
   /// Retos de ejemplo del documento (fechas relativas a hoy).
   RetosPage _paginaEjemplo(RetoFiltros filtros) {
@@ -230,13 +237,14 @@ class RetosController extends StateNotifier<RetosState> {
           .toList();
     }
     if (filtros.presupuesto.min != null) {
+      // El estudiante filtra por NETO; los datos son BRUTO.
       result = result
-          .where((r) => r.presupuestoUsd >= filtros.presupuesto.min!)
+          .where((r) => r.presupuestoUsd >= brutoMinimo(filtros.presupuesto.min!))
           .toList();
     }
     if (filtros.presupuesto.max != null) {
       result = result
-          .where((r) => r.presupuestoUsd <= filtros.presupuesto.max!)
+          .where((r) => r.presupuestoUsd <= brutoMaximo(filtros.presupuesto.max!))
           .toList();
     }
     if (filtros.habilidades.isNotEmpty) {

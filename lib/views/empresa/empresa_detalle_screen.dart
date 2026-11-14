@@ -11,6 +11,7 @@ import '../../../models/reto_empresa.dart';
 import '../../../utils/fecha_es.dart';
 import '../widgets/rumbo_card.dart';
 import '../widgets/rumbo_chips.dart';
+import '../../core/realtime/realtime_sync.dart';
 
 /// Detalle de un reto, vista empresa: `/empresa/retos/:id`.
 class EmpresaDetalleScreen extends ConsumerStatefulWidget {
@@ -48,6 +49,12 @@ class _EmpresaDetalleScreenState extends ConsumerState<EmpresaDetalleScreen>
 
   @override
   Widget build(BuildContext context) {
+    escucharRealtime(ref, (e) {
+      if (esEventoDeRetos(e)) {
+        ref.read(retoGestionControllerProvider(widget.retoId).notifier)
+            .cargar(silenciosa: true);
+      }
+    });
     final state = ref.watch(retoGestionControllerProvider(widget.retoId));
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= 900;
@@ -85,8 +92,16 @@ class _EmpresaDetalleScreenState extends ConsumerState<EmpresaDetalleScreen>
                               children: [
                                 Flexible(
                                   child: TextButton.icon(
-                                    onPressed: () =>
-                                        context.go('/empresa/retos'),
+                                    onPressed: () {
+                                      // Tras un F5 o un enlace directo no hay
+                                      // pila: `pop` no haría nada. `go` siempre
+                                      // lleva a "Mis retos".
+                                      if (context.canPop()) {
+                                        context.pop();
+                                      } else {
+                                        context.go('/empresa/retos');
+                                      }
+                                    },
                                     icon: const Icon(Icons.arrow_back_rounded,
                                         size: 18),
                                     label: const Text('Volver a mis retos'),
@@ -208,14 +223,17 @@ class _Cabecera extends StatelessWidget {
             style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
           ),
           const SizedBox(height: 16),
-          Row(
+          // `Wrap` en vez de `Row`: si no caben (móvil estrecho o texto grande)
+          // pasan a la línea siguiente en vez de desbordar.
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
               OutlinedButton.icon(
                 onPressed: () => context.go('/empresa/retos/${reto.id}/editar'),
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Editar'),
               ),
-              const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: () => _confirmarCerrar(context, reto.id),
                 icon: const Icon(Icons.lock_outline, size: 18),

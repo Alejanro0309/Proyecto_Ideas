@@ -22,6 +22,8 @@ import '../widgets/section_header.dart';
 import 'widgets/active_reto_card.dart';
 import 'widgets/notifications_card.dart';
 import 'widgets/profile_banner.dart';
+import '../../core/utils/comision.dart';
+import '../../core/realtime/realtime_sync.dart';
 
 /// Panel del estudiante (pestaña "Panel").
 class PanelScreen extends ConsumerWidget {
@@ -29,6 +31,18 @@ class PanelScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    escucharRealtime(ref, (e) {
+      if (esEventoDeLogro(e)) {
+        ref.invalidate(userProfileProvider);
+        return;
+      }
+      if (esEventoDeRetos(e)) {
+        ref.invalidate(retosActivosProvider);
+        ref.invalidate(retosRecomendadosProvider);
+        ref.invalidate(notificacionesProvider);
+        ref.invalidate(misRetosControllerProvider);
+      }
+    });
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= 840;
 
@@ -246,7 +260,10 @@ class _Postulaciones extends ConsumerWidget {
                       children: [
                         _BadgePostulacion(estado: p.estado),
                         const Spacer(),
-                        BudgetBadge('US\$${p.presupuestoUsd}'),
+                        BudgetBadge(
+                          netoFormateado(p.presupuestoUsd),
+                          etiqueta: 'Pago para ti',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),

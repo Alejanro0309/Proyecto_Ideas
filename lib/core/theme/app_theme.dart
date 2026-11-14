@@ -92,13 +92,18 @@ ThemeData buildRumboTheme() {
         side: const BorderSide(color: AppColors.line),
       ),
     ),
+    // `Size.fromHeight(52)` es `Size(double.infinity, 52)`: como mínimo ANCHO
+    // infinito. Cualquier botón dentro de un `Row`/`Wrap` (ancho no acotado)
+    // recibía `minWidth = infinito` y reventaba el layout con
+    // "BoxConstraints forces an infinite width", dejando la pantalla en blanco.
+    // Lo correcto es alto mínimo 52 y ancho según el contenido.
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.orange,
         foregroundColor: AppColors.white,
         disabledBackgroundColor: AppColors.orange.withValues(alpha: 0.5),
         disabledForegroundColor: AppColors.white.withValues(alpha: 0.7),
-        minimumSize: const Size.fromHeight(52),
+        minimumSize: const Size(0, 52),
         shape: const StadiumBorder(),
         textStyle: GoogleFonts.manrope(
           fontSize: 16,
@@ -110,7 +115,7 @@ ThemeData buildRumboTheme() {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.navy900,
-        minimumSize: const Size.fromHeight(52),
+        minimumSize: const Size(0, 52),
         shape: const StadiumBorder(),
         side: const BorderSide(color: AppColors.line),
         textStyle: GoogleFonts.manrope(

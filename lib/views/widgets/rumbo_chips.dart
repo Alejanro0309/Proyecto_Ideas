@@ -84,15 +84,19 @@ class SkillChip extends StatelessWidget {
 }
 
 /// Badge de presupuesto: fondo `yellowSoft`, texto `amberText` 14/800.
+///
+/// `etiqueta` (por ejemplo "Pago para ti" en la vista del estudiante o
+/// "Presupuesto" en la de la empresa) se muestra encima, en pequeño.
 class BudgetBadge extends StatelessWidget {
-  const BudgetBadge(this.amount, {super.key});
+  const BudgetBadge(this.amount, {super.key, this.etiqueta});
 
   /// Formato esperado `US$60`.
   final String amount;
+  final String? etiqueta;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final badge = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.yellowSoft,
@@ -106,6 +110,27 @@ class BudgetBadge extends StatelessWidget {
           color: AppColors.amberText,
         ),
       ),
+    );
+
+    if (etiqueta == null) return badge;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          etiqueta!,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.inkMuted,
+          ),
+        ),
+        const SizedBox(height: 2),
+        badge,
+      ],
     );
   }
 }

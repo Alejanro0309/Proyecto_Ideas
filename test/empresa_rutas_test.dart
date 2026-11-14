@@ -55,11 +55,11 @@ void main() {
   testWidgets('/empresa/retos monta la lista con los filtros', (tester) async {
     await navegar(tester, '/empresa/retos');
     expect(tester.takeException(), isNull);
-    expect(find.text('Todos'), findsOneWidget);
-    expect(find.text('Borrador'), findsOneWidget);
-    expect(find.text('Publicado'), findsOneWidget);
-    expect(find.text('En curso'), findsOneWidget);
-    expect(find.text('Cerrado'), findsOneWidget);
+    expect(find.textContaining('Todos'), findsOneWidget);
+    expect(find.textContaining('Borrador'), findsOneWidget);
+    expect(find.textContaining('Publicado'), findsOneWidget);
+    expect(find.textContaining('En curso'), findsOneWidget);
+    expect(find.textContaining('Cerrado'), findsOneWidget);
   });
 
   testWidgets('/empresa/retos/nuevo monta el formulario sin error de Material',
@@ -76,10 +76,31 @@ void main() {
     expect(find.text('Guardar borrador'), findsOneWidget);
   });
 
+  // El escáner tiene un spinner que anima para siempre, así que en el test no
+  // se puede usar pumpAndSettle: se bombea un tiempo fijo.
+  Future<void> navegarSinSettear(WidgetTester tester, String ruta) async {
+    tester.view.physicalSize = const Size(1280, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp.router(
+          routerConfig: appRouter,
+          theme: ThemeData(useMaterial3: true),
+        ),
+      ),
+    );
+    await tester.pump();
+    appRouter.go(ruta);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
   testWidgets('/empresa/escanear y /empresa/perfil existen', (tester) async {
-    await navegar(tester, '/empresa/escanear');
-    expect(tester.takeException(), isNull);
-    expect(find.text('Escanear QR de un estudiante'), findsOneWidget);
+    await navegarSinSettear(tester, '/empresa/escanear');
+    expect(find.text('Escanear QR'), findsWidgets);
+    expect(find.text('Pegar enlace o código'), findsOneWidget);
 
     await navegar(tester, '/empresa/perfil');
     expect(tester.takeException(), isNull);

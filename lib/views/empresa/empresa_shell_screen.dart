@@ -7,11 +7,12 @@ import '../../../controllers/empresa_retos_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/adaptive_nav.dart';
 import 'empresa_detalle_screen.dart';
-import 'empresa_escanear_screen.dart';
+import '../escanear_qr_screen.dart';
 import 'empresa_form_screen.dart';
 import 'empresa_panel_screen.dart';
 import 'empresa_perfil_screen.dart';
 import 'empresa_retos_screen.dart';
+import '../widgets/realtime_snackbars.dart';
 
 /// Contador de la barra: candidatos + entregas por revisar.
 ///
@@ -146,7 +147,7 @@ class _EmpresaShellScreenState extends ConsumerState<EmpresaShellScreen> {
     // desde el detalle o el formulario no se queda la pantalla anterior.
     return switch (_indiceRuta) {
       1 => const EmpresaRetosScreen(),
-      2 => const EmpresaEscanearScreen(),
+      2 => const EscanearQrScreen(),
       3 => const EmpresaPerfilScreen(),
       _ => const EmpresaPanelScreen(),
     };
@@ -182,14 +183,25 @@ class _EmpresaShellScreenState extends ConsumerState<EmpresaShellScreen> {
           if (isDesktop)
             SafeArea(
               bottom: false,
-              child: AdaptiveNav(
-                destinations: _destinations,
-                currentIndex: indice,
-                onDestinationSelected: _onSelect,
-                isLoggedIn: true,
-                // El punto naranja en "Mis retos" con el contador.
-                badgeIndex: 1,
-                badgeCount: pendientes,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: AdaptiveNav(
+                      destinations: _destinations,
+                      currentIndex: indice,
+                      onDestinationSelected: _onSelect,
+                      isLoggedIn: true,
+                      // El punto naranja en "Mis retos" con el contador.
+                      badgeIndex: 1,
+                      badgeCount: pendientes,
+                    ),
+                  ),
+                  // Estado de Realtime, solo en modo debug.
+                  const Padding(
+                    padding: EdgeInsets.only(right: 16),
+                    child: RealtimeIndicator(),
+                  ),
+                ],
               ),
             ),
           // Solo se monta la pestaña activa: las otras no hacen peticiones ni

@@ -6,6 +6,7 @@ import '../models/reto_detalle.dart';
 import '../models/reto_empresa.dart';
 import '../models/reto_filtros.dart';
 import '../models/revision.dart';
+import '../core/utils/comision.dart';
 
 // ─── Excepciones del servidor (tabla 5.2 del documento) ────────────────
 
@@ -213,14 +214,24 @@ class RetosRepository {
     int offset = 0,
     int limit = 20,
   }) async {
+    // Los rangos que ve el estudiante son NETOS; `presupuesto_usd` en la base
+    // es BRUTO. Convertimos con enteros antes de consultar (no se toca el SQL
+    // de `buscar_retos`).
+    final minimo = filtros.presupuesto.min == null
+        ? null
+        : brutoMinimo(filtros.presupuesto.min!);
+    final maximo = filtros.presupuesto.max == null
+        ? null
+        : brutoMaximo(filtros.presupuesto.max!);
+
     final data = await _client.rpc('buscar_retos', params: {
       'p_area': filtros.areaSlug,
       'p_habilidades': filtros.habilidades.isEmpty
           ? null
           : filtros.habilidades.map((h) => h.slug).toList(),
       'p_duracion_max': filtros.duracion.maxDias,
-      'p_presupuesto_min': filtros.presupuesto.min,
-      'p_presupuesto_max': filtros.presupuesto.max,
+      'p_presupuesto_min': minimo,
+      'p_presupuesto_max': maximo,
       'p_orden': 'recientes',
       'p_limit': limit,
       'p_offset': offset,

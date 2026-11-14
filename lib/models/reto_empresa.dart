@@ -16,6 +16,14 @@ DateTime? _parseFecha(dynamic valor) {
 DateTime _parseFechaObligatorio(dynamic valor) =>
     _parseFecha(valor) ?? DateTime.fromMillisecondsSinceEpoch(0);
 
+/// Estado visible de un reto de la empresa, calculado en UN solo lugar a
+/// partir de los contadores que devuelve `mis_retos_empresa`.
+///
+/// Se usa en el Panel, en la lista de "Mis retos", en los filtros, en las
+/// tarjetas y en el contador naranja de la barra: así nunca hay dos
+/// definiciones distintas de "en qué estado está este reto".
+enum EstadoVisibleReto { borrador, cerrado, enCurso, publicado }
+
 /// Reto de la empresa con contadores (función `mis_retos_empresa`).
 class RetoEmpresa extends Equatable {
 
@@ -67,8 +75,44 @@ class RetoEmpresa extends Equatable {
   int get cuposOcupados => enCurso + enRevision + completados;
   bool get cuposCompletos => cuposOcupados >= cupos;
 
+  /// ¿Hay al menos un estudiante elegido que todavía no termina?
+  bool get tieneTrabajoActivo => enCurso > 0 || enRevision > 0;
+
+  /// El servidor ya lo dio por cerrado o completado a mano.
+  bool get cerradoPorServidor => estado == 'cerrado' || estado == 'completado';
+
+  /// Regla de negocio del estado visible. Orden de prioridad:
+  ///   1. Borrador.
+  ///   2. Cerrado: cerrado/completado en el servidor, o sin trabajo activo
+  ///      (en_curso = 0 y en_revision = 0) con al menos un completado.
+  ///   3. En curso: hay al menos un elegido sin terminar.
+  ///   4. Publicado: abierto a postulaciones, nadie trabajando.
+  ///
+  /// Los cupos ocupados (`cuposCompletos`) NO deciden el estado: solo se usan
+  /// para "Cupos 1/3" y para deshabilitar "Seleccionar".
+  EstadoVisibleReto get estadoVisible {
+    if (estado == 'borrador') return EstadoVisibleReto.borrador;
+    if (cerradoPorServidor) return EstadoVisibleReto.cerrado;
+    if (!tieneTrabajoActivo && completados > 0) return EstadoVisibleReto.cerrado;
+    if (tieneTrabajoActivo) return EstadoVisibleReto.enCurso;
+    return EstadoVisibleReto.publicado;
+  }
+
+  /// Badge verde "Completado". Si no hay completados, es el badge gris
+  /// "Cerrado".
+  bool get esCompletado =>
+      estadoVisible == EstadoVisibleReto.cerrado && completados > 0;
+
+  /// Etiqueta del filtro de "Mis retos" que le corresponde.
+  String get filtroVisible => switch (estadoVisible) {
+        EstadoVisibleReto.borrador => 'borrador',
+        EstadoVisibleReto.cerrado => 'cerrado',
+        EstadoVisibleReto.enCurso => 'en_curso',
+        EstadoVisibleReto.publicado => 'publicado',
+      };
+
   @override
-  List<Object?> get props => [id, estado];
+  List<Object?> get props => [id, estado, enCurso, enRevision, completados];
 }
 
 /// Reto editable (función `detalle_reto_empresa`).

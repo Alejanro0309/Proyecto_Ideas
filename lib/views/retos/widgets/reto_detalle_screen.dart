@@ -19,6 +19,7 @@ import '../../widgets/rumbo_card.dart';
 import '../../widgets/rumbo_chips.dart';
 import '../../widgets/section_header.dart' show RumboSkeleton;
 import '../../widgets/section_header.dart' show AnimatedProgressBar;
+import '../../../core/utils/comision.dart';
 
 /// Pantalla de detalle de un reto: `/retos/:id`.
 class RetoDetalleScreen extends ConsumerWidget {
@@ -246,7 +247,15 @@ class _PanelAceptar extends ConsumerWidget {
             style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
           ),
           const SizedBox(height: 6),
-          BudgetBadge('US\$${reto.presupuestoUsd}'),
+          BudgetBadge(
+            netoFormateado(reto.presupuestoUsd),
+            etiqueta: 'Pago para ti',
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Ya descontada la comisión de RUMBO (8 %).',
+            style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [

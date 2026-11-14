@@ -55,7 +55,7 @@ void main() {
     await navegar(tester, '/empresa/retos');
     expect(tester.takeException(), isNull);
     expect(find.byType(EmpresaRetosScreen), findsOneWidget);
-    expect(find.text('Todos'), findsOneWidget);
+    expect(find.textContaining('Todos'), findsOneWidget);
   });
 
   testWidgets('El detalle recibe el id del reto desde la URL', (tester) async {

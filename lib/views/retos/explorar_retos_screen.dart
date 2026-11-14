@@ -11,6 +11,7 @@ import '../../../models/reto_filtros.dart';
 import '../widgets/reto_card.dart';
 import '../widgets/section_header.dart' show RumboSkeleton;
 import 'widgets/filtros_retos_bar.dart';
+import '../../core/realtime/realtime_sync.dart';
 
 /// Pantalla "Explorar retos": filtros, paginación y estados de la sección.
 class ExplorarRetosScreen extends ConsumerStatefulWidget {
@@ -48,6 +49,12 @@ class _ExplorarRetosScreenState extends ConsumerState<ExplorarRetosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    escucharRealtime(ref, (e) {
+      if (esEventoDeRetos(e)) {
+        // Recarga silenciosa: no mueve el scroll ni toca los filtros.
+        ref.read(retosControllerProvider.notifier).recargar();
+      }
+    });
     final state = ref.watch(retosControllerProvider);
     final controller = ref.read(retosControllerProvider.notifier);
     final isDesktop = MediaQuery.sizeOf(context).width >= 840;

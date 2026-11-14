@@ -5,6 +5,9 @@ import '../models/reto.dart';
 import '../models/student_profile.dart';
 import '../models/profile_repository.dart';
 import '../models/rumbo_repository.dart';
+import '../controllers/cv_publico_controller.dart';
+import '../controllers/mi_curriculo_controller.dart';
+import '../repositories/curriculo_repository.dart';
 import '../repositories/retos_repository.dart';
 import '../services/auth_service.dart';
 import '../services/scanner_service.dart';
@@ -21,6 +24,10 @@ final profileRepositoryProvider = Provider<ProfileRepository>(
 
 final rumboRepositoryProvider = Provider<RumboRepository>(
   (ref) => RumboRepository(ref.watch(supabaseClientProvider)),
+);
+
+final curriculoRepositoryProvider = Provider<CurriculoRepository>(
+  (ref) => CurriculoRepository(ref.watch(supabaseClientProvider)),
 );
 
 final retosRepositoryProvider = Provider<RetosRepository>(
@@ -84,3 +91,34 @@ final studentProfileProvider =
   if (user == null) return null;
   return ref.watch(profileRepositoryProvider).getProfile(user.id);
 });
+
+// ─── Currículum verificable y QR ─────────────────────────────────────
+//
+// Dependen del id del usuario auténtico: al cambiar de cuenta se recrean y
+// nunca se muestran datos (ni logros) del usuario anterior.
+final miCurriculoControllerProvider =
+    StateNotifierProvider.autoDispose<MiCurriculoController, MiCurriculoState>(
+  (ref) {
+    // Escuchar el id hace que el provider se recicle al iniciar/cerrar sesión.
+    ref.watch(authUserIdProvider);
+    return MiCurriculoController(ref.watch(curriculoRepositoryProvider));
+  },
+);
+
+/// Visor público `/cv/:token`. NO depende de la sesión: funciona sin login.
+final cvPublicoControllerProvider = StateNotifierProvider.autoDispose
+    .family<CvPublicoController, CvPublicoState, String>(
+  (ref, token) => CvPublicoController(
+    ref.watch(curriculoRepositoryProvider),
+    token,
+  ),
+);
+
+/// Verificación de un logro `/verificar/:codigo`. Sin sesión.
+final verificarLogroControllerProvider = StateNotifierProvider.autoDispose
+    .family<VerificarLogroController, VerificarLogroState, String>(
+  (ref, codigo) => VerificarLogroController(
+    ref.watch(curriculoRepositoryProvider),
+    codigo,
+  ),
+);
